@@ -14,10 +14,11 @@
 .k-code .ln { display: block; padding-left: 3.4em; text-indent: 0; position: relative; min-height: 1.7em; }
 .k-code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 0; width: 2.4em; text-align: right; color: var(--ink-2); user-select: none; }
 
-.k-summary { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; background: color-mix(in srgb, var(--folder) 22%, var(--paper)); border: 2px solid var(--folder); border-radius: 16px; padding: 18px 22px; font-size: 16px; line-height: 1.6; min-width: 0; }
+.k-summary { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; background: var(--folder); color: var(--on-folder); border: 2px solid var(--on-folder); border-radius: 16px; padding: 18px 22px; font-size: 16px; line-height: 1.6; min-width: 0; }
 .k-summary-main { flex: 1 1 260px; min-width: 0; }
 .k-summary h4 { margin: 0 0 10px; font-size: 19px; font-weight: 700; }
 .k-summary-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .k-summary-chips .k-chip { margin-left: 0; font-size: 15px; padding: 4px 12px; }
-.k-summary-empty { margin: 0; color: var(--ink-2); }
+.k-summary-chips .k-chip:not(.look) { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--on-folder); }   /* 노란 바탕 위에서도 칩이 보이게 */
+.k-summary-empty { margin: 0; }
 .k-summary-aside { flex: 1 1 260px; min-width: 0; }

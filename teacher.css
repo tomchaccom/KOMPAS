@@ -187,8 +187,8 @@ details.more > summary { cursor: pointer; font-size: 15px; font-weight: 600; min
 details.more[open] > summary { margin-bottom: 16px; }
 
 /* ── 학생 한 명 ──────────────────────────────────────
- * 교사가 움직이는 순서로 위에서 아래: 지금 상태 → 먼저 물어볼 것 → 나침반(본문 폭 전체)
- * → 미션별 접는 줄 기록 · 튜터 대화와 짚을 거리(본문이 넓으면 나란히). */
+ * 교사가 움직이는 순서로 위에서 아래: 지금 상태 → 요약 카드[+나침반 할 일 · 자세히] → 먼저 물어볼 것
+ * → 미션별 접는 줄 기록 → 레벨 테스트 기록 → 튜터 대화와 짚을 거리. */
 .d-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; }
 .d-who { min-width: 0; }
 .detail .big-title { font-size: clamp(32px, 4vw, 48px); margin: 0; }
@@ -355,6 +355,8 @@ details.more[open] > summary { margin-bottom: 16px; }
 
 /* 나침반 카드 — 회색·검정만 (브랜드 색 미정). 서랍 안, 기록 위. 방향은 색이 아니라 모양(▲ ◧ ○ ◇) */
 .compass-card { margin: 12px 0; display: grid; gap: 16px; min-width: 0; font-size: 16px; line-height: 1.6; }
+.compass-todo { display: grid; gap: 16px; min-width: 0; }
+.compass-todo:empty { display: none; }
 .compass-card h5 { margin: 0; font-size: 16px; }
 .compass-top { display: flex; gap: 16px 28px; flex-wrap: wrap; align-items: flex-start; }
 .compass-card .compass-fig svg { width: 168px; height: 168px; display: block; }
@@ -579,5 +581,3 @@ body { font-size: 17px; }
 .gp-result { margin-top: 14px; font-size: 16px; }
 .list-h { font-size: 16px; font-weight: 700; margin: 20px 0 10px; }
 @media (max-width: 600px) { .seg { display: flex; } #dtab-missions .panel .seg-b { flex: 1; padding: 0 8px; } .gp-sum { flex-wrap: wrap; } }
-.compass-todo { display: grid; gap: 16px; min-width: 0; }
-.compass-todo:empty { display: none; }

@@ -29,10 +29,14 @@
     return { root: root, body: body };
   }
   /* 요약 카드 — 제목 · 눈에 띄는 표시(칩) · 오른쪽 자리(나침반 그림 · 방향). 칩이 없으면 한 줄 */
+  var summarySeq = 0;
   function summary(opts) {
     var root = el('section', 'k-summary');
     var main = el('div', 'k-summary-main');
-    main.appendChild(el('h4', null, opts.title));
+    var h = el('h4', null, opts.title);
+    h.id = 'k-summary-h-' + (++summarySeq);   /* 다시 그릴 때마다 새 id — 겹치지 않게 */
+    root.setAttribute('aria-labelledby', h.id);
+    main.appendChild(h);
     if (opts.chips && opts.chips.length) {
       var row = el('div', 'k-summary-chips');
       opts.chips.forEach(function (c) { row.appendChild(chip(c.txt, { look: c.look })); });
@@ -46,9 +50,8 @@
     }
     return root;
   }
-  /* saybox 는 e2e 가 고르는 이름 — 바꿀 때 테스트와 같이 */
   function note(label, text) {
-    var n = el('div', 'k-note saybox');
+    var n = el('div', 'k-note');
     n.appendChild(el('span', 'k', label));
     n.appendChild(el('span', null, text));
     return n;

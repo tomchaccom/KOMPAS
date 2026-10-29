@@ -265,7 +265,7 @@
   function waiting(s) {
     return !!cRows && finishedOf(s).some(function (m) { var r = cRows[ckey(s.id, m)]; return !(r && r.sent_at); });
   }
-  /* 미션 DB id → 이 학생 기록 안의 미션 id (서랍의 미션 알약·이름이 쓰는 id) */
+  /* 미션 DB id → 이 학생 기록 안의 미션 id (서랍의 미션 줄 제목·이름이 쓰는 id) */
   function clientMid(s, dbId) {
     var e = eventsOf(s).filter(function (x) { return x._missionDbId === dbId && x.mid; })[0];
     return e ? e.mid : null;
@@ -391,7 +391,7 @@
    mid — 알림으로 고른 미션(없으면 끝낸 미션 전부의 한마디 칸) */
   function compassCard(st, mid, nameOf, marks) {
     var card = el('section', 'compass-card');
-    card.setAttribute('aria-label', '나침반');
+    card.setAttribute('aria-label', '요약과 나침반');
     var n = ++cSeq;
     var D = CC.compass.DIRS, SH = CC.compass.SHAPE;
     var draw = function () {

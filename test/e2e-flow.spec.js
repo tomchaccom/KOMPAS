@@ -761,6 +761,7 @@ compass:function(a,b){return CC.sb.api('/api/compass',Object.assign({action:a},b
 test('강사 — 교실 폴더, 기록 없는 학생도 폴더, 교실에서 빼기', async ({ page }) => {
   await page.route('**/supabase-js@*/**', r => r.abort());
   await page.route('**/js/data/supabase.js', r => r.fulfill({ contentType: 'application/javascript', body: FAKE_TEACHER }));
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.goto(BASE + '/teacher.html');
   await expect(page.locator('#classroom-cards .room-tile')).toHaveCount(2);
   await page.locator('#classroom-cards .room-tile', { hasText: '태인한결' }).click();
@@ -773,6 +774,7 @@ test('강사 — 교실 폴더, 기록 없는 학생도 폴더, 교실에서 빼
   await expect(page.locator('#detail details.k-fold')).toHaveCount(0);
   await expect(page.locator('#detail .k-summary')).toContainText('표시할 것이 아직 없어요.');
   await expect(page.locator('#detail .k-summary .k-chip')).toHaveCount(0);
+  expect(errs).toEqual([]);
   await page.locator('#detail-back').click();
 
   page.once('dialog', d => d.accept());
@@ -2793,7 +2795,7 @@ test('학생 상세 — 본문 화면: 목록은 숨고, ← 학생 · Esc 로 �
   await expect(tile).toBeFocused();
 });
 
-test('학생 상세 — 알림 항목으로 열면 그 미션 칩이 골라져 있다', async ({ page }) => {
+test('학생 상세 — 알림 항목으로 열면 그 미션 줄만 열려 있다', async ({ page }) => {
   test.setTimeout(60000);
   await page.addInitScript(() => { window.__evs = []; });
   await asTeacher(page);
