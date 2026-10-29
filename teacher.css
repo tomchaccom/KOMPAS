@@ -196,10 +196,6 @@ details.more[open] > summary { margin-bottom: 16px; }
 .d-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .detail .d-acts .pill { min-height: 36px; padding: 0 14px; font-size: 13px; margin: 0; border-color: var(--line-strong); }
 .detail .saybox { margin-top: 20px; max-width: 72ch; font-size: 16px; }
-.mf-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-.mf { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: none; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }
-.mf[aria-pressed="true"] { border: 2px solid var(--ink); font-weight: 600; }
-.mf .st { font-size: 12px; color: var(--ink-2); font-weight: 400; }
 .d-main, .d-tutor { min-width: 0; margin-top: 32px; }
 .d-main h4, .d-tutor h4 { margin: 0; font-size: 19px; font-weight: 700; }
 .d-tutor h5 { margin: 20px 0 0; font-size: 16px; font-weight: 700; }

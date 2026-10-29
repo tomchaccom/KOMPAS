@@ -3,6 +3,8 @@
 .k-chip.look { background: var(--coral-soft); color: var(--coral); box-shadow: inset 0 0 0 1.5px var(--coral); }
 
 .k-fold > summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.k-fold > summary::after { content: '▸'; margin-left: auto; padding-left: 12px; color: var(--ink-2); }
+.k-fold[open] > summary::after { content: '▾'; }
 .k-fold-body { padding: 4px 0 8px; }
 
 .k-note { margin-top: 16px; background: var(--green-soft); border: 1px solid var(--green); border-radius: 12px; padding: 14px 15px; font-size: 14px; line-height: 1.6; }

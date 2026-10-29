@@ -568,76 +568,10 @@
     d.appendChild(sec);
   }
 
-  /* focusSection — 알림에서 열 때 이름 붙은 곳('compass' | 'tutor')으로 바로 내려가 거기에 초점을 둔다 */
-  function openDetail(s, mid, focusSection) {
-    var all = eventsOf(s);
-    var ms = mids(all);
-    var evs = mid ? all.filter(function (e) { return e.mid === mid; }) : all;
-    var v = mid ? (CC.fold.fold(evs, { id: s.id, name: s.name }) || CC.fold.empty(s.id, s.name)) : s;
-
-    var d = $('#detail');
-    var opening = d.hidden;
-    if (opening) detailFrom = { y: window.scrollY, id: s.id };   /* 미션 칩을 눌러 다시 그릴 때는 처음 자리를 지킨다 */
-    else if (detailFrom) detailFrom.id = s.id;                     /* 알림으로 다른 학생을 열면 돌아갈 타일은 그 학생 */
-    d.innerHTML = '';
-    var back = el('button', 'd-back', '← 학생');
-    back.type = 'button';
-    back.id = 'detail-back';
-    back.addEventListener('click', closeDetail);
-    d.appendChild(back);
-
-    /* 머리 — 이름과 지금 상태 한 줄. 계정 일은 오른쪽 끝에 작게: 서랍을 연 이유가 아니다 */
-    var head = el('header', 'd-head');
-    var who = el('div', 'd-who');
-    who.appendChild(el('h3', 'big-title', s.name));
-    who.appendChild(el('p', 'dsub', (s.noRecord ? '아직 기록이 없어요' : '지금 ' + whereNow(s) + ' · 마지막 조작 ' + mmss(s.idleSec)) +
-      (s.onboard && s.onboard.stage && CC.onboard ? ' · 레벨 ' + CC.onboard.LABEL[s.onboard.stage] : '')));
-    head.appendChild(who);
-    if (CC.sb && CC.sb.active() && CC._removeStudent) {   /* 교실이 서버에만 있다 — 로컬 모드에는 뺄 교실이 없다 */
-      var acts = el('div', 'd-acts');
-      var inRoster = (CC.classroom.roster || []).filter(function (r) { return r.id === s.id; })[0];
-      if (inRoster && inRoster.login_id && CC._resetPassword) {   /* 선생님이 만든 계정만 — 이메일로 가입한 예전 학생은 아이디가 없다 */
-        var rp = el('button', 'pill roster-reset', '비밀번호 다시 만들기');
-        rp.type = 'button';
-        rp.addEventListener('click', function () { CC._resetPassword(inRoster); });
-        acts.appendChild(rp);
-      }
-      var rm = el('button', 'pill roster-remove', '교실에서 빼기');
-      rm.type = 'button';
-      rm.addEventListener('click', function () { CC._removeStudent(s); });
-      acts.appendChild(rm);
-      head.appendChild(acts);
-    }
-    d.appendChild(head);
-    delete fresh[s.id];
-
-    /* 교사가 할 말을 대신 써주지 않는다. 물어볼 질문만 고른다. 서랍을 열면 제일 먼저 보인다 */
-    d.appendChild(CC.kit.note('이 학생에게 먼저 물어볼 것', nextQuestion(s)));
-
-    /* 미션 고르기 — 기록이 미션 하나뿐이면 고를 게 없다 */
-    if (ms.length > 1) {
-      var pills = el('div', 'mf-row');
-      pills.setAttribute('aria-label', '미션');
-      [null].concat(ms).forEach(function (id, i) {
-        var b = el('button', 'mf', id ? missionName(id, i - 1) : '모든 미션');
-        b.type = 'button';
-        b.setAttribute('aria-pressed', (id || null) === (mid || null) ? 'true' : 'false');
-        if (id) b.appendChild(el('span', 'st', CC.fold.missionStatus(all.filter(function (e) { return e.mid === id; })) === 'done' ? '완료' : '아직'));
-        b.addEventListener('click', function () { openDetail(s, id); });
-        pills.appendChild(b);
-      });
-      d.appendChild(pills);
-    }
-
-    if (serverOn()) {   /* 로컬 모드에는 나침반이 없다 */
-      d.appendChild(compassCard(s, mid, function (dbId, cm) { return missionName(cm, ms.indexOf(cm)); }));
-      if (cRoom) refreshCum(s, !cInit);   /* 열 때마다 새로 — 다른 기기에서 보낸 것도 보이게 */
-    }
-
-    var main = el('section', 'd-main');
-    main.setAttribute('aria-label', '기록');
-    main.appendChild(el('h4', null, '이 학생이 한 것 — 순서대로'));
-    main.appendChild(el('p', 'lead', '노란 표시는 말 걸기 좋은 순간, 붉은 표시는 살펴볼 것이에요.'));
+  /* 한 미션(mid)의 기록 — 단계(01~05)별 묶음. mid 가 null 이면 예전 블록 미션 기록(다른 미션 기록). 줄이 없으면 안내 한 줄 */
+  function missionRecords(s, mid, all) {
+    var evs = all.filter(function (e) { return mid ? e.mid === mid : !e.mid; });   /* mid 없는 기록은 예전 것 */
+    var v = CC.fold.fold(evs, { id: s.id, name: s.name }) || CC.fold.empty(s.id, s.name);
     var dl = el('div');   /* 줄을 모았다가 아래에서 단계별로 나눠 담는다 */
 
     /* 문장형 미션 */
@@ -694,7 +628,7 @@
         if (!(c.dataId in byData)) order.push(c.dataId);
         byData[c.dataId] = { out: c.error || String(c.output || '').trim() || '출력 없음', err: !!c.error };
       });
-      var m = missionOf(mid || (ms.length === 1 ? ms[0] : null));   /* 자료 값 → 자료 이름 */
+      var m = missionOf(mid);   /* 자료 값 → 자료 이름 */
       row(dl, '자료별 결과', lastCode.t, function (dd) {
         /* 학생 04 화면의 결과 표와 같은 세 칸 — 자료 · 내용 · 결과 */
         var tb = el('table', 'd-tbl');
@@ -713,7 +647,7 @@
       }, 4);
     }
     /* 코드 사실 — 실행·구조로 확실한 것만, 한 줄에 하나. 판정이나 점수가 아니다 (미션 하나가 정해졌을 때만) */
-    var fm = v.sCodes.length && missionOf(mid || (ms.length === 1 ? ms[0] : null));
+    var fm = v.sCodes.length && missionOf(mid);
     if (fm && CC.facts) {
       var facts = CC.facts.of(v, fm);
       if (facts.length) {
@@ -799,30 +733,101 @@
       });
       if (s.wrap) row(dl, '오늘 이 학생이 말할 문장', null, function (dd) { dd.textContent = s.wrap; });
     }
-    /* 눈에 띄는 것 — 아래 줄에 붙은 표시를 한곳에 모은다. 표시가 없는 학생은 이 줄이 없다 */
-    var flags = el('ul', 'd-flags'), seenFlag = {};
-    flags.setAttribute('aria-label', '눈에 띄는 것');
-    Array.prototype.forEach.call(dl.querySelectorAll('.mark'), function (m) {
-      if (seenFlag[m.textContent]) return;
-      seenFlag[m.textContent] = 1;
-      flags.appendChild(el('li', m.className, m.textContent));
-    });
-    if (flags.children.length) main.appendChild(flags);
     /* 단계별로 묶는다 — 학생 화면의 01~05 단계 이름 그대로. 단계 안은 기록 순서 */
     var box = el('div', 'd-rows');
-    [[1, '01 문제'], [2, '02 성공'], [3, '03 설계'], [4, '04 코딩'], [5, '05 정리'], [0, '다른 미션 기록']].forEach(function (g) {
+    [[1, '01 문제'], [2, '02 성공'], [3, '03 설계'], [4, '04 코딩'], [5, '05 정리'], [0, '']].forEach(function (g) {
       var rs = Array.prototype.filter.call(dl.children, function (r) { return Number(r.dataset.step) === g[0]; })
         .sort(function (a, b) { return (Number(a.dataset.t) || 0) - (Number(b.dataset.t) || 0) || 0; });   /* 시각 없는 줄(예전 기록)은 0 — 안정 정렬로 제자리 */
       if (!rs.length) return;
       var sec = el('section', 'd-step');
-      sec.appendChild(el('h5', 'd-step-h', g[1]));
+      if (g[1]) sec.appendChild(el('h5', 'd-step-h', g[1]));   /* 예전 기록은 접는 줄 제목이 이미 이름이다 */
       var gl = el('dl');
       rs.forEach(function (r) { gl.appendChild(r); });
       sec.appendChild(gl);
       box.appendChild(sec);
     });
     if (!box.children.length) box.appendChild(el('p', 'emptyrow', '아직 기록이 없어요.'));
-    main.appendChild(box);
+    return box;
+  }
+
+  /* focusSection — 알림에서 열 때 이름 붙은 곳('compass' | 'tutor')으로 바로 내려가 거기에 초점을 둔다 */
+  function openDetail(s, mid, focusSection) {
+    var all = eventsOf(s);
+    var ms = mids(all);
+    var evs = mid ? all.filter(function (e) { return e.mid === mid; }) : all;
+    var v = mid ? (CC.fold.fold(evs, { id: s.id, name: s.name }) || CC.fold.empty(s.id, s.name)) : s;
+
+    var d = $('#detail');
+    var opening = d.hidden;
+    if (opening) detailFrom = { y: window.scrollY, id: s.id };   /* 알림으로 다른 학생·미션을 열어 다시 그릴 때는 처음 자리를 지킨다 */
+    else if (detailFrom) detailFrom.id = s.id;                     /* 알림으로 다른 학생을 열면 돌아갈 타일은 그 학생 */
+    d.innerHTML = '';
+    var back = el('button', 'd-back', '← 학생');
+    back.type = 'button';
+    back.id = 'detail-back';
+    back.addEventListener('click', closeDetail);
+    d.appendChild(back);
+
+    /* 머리 — 이름과 지금 상태 한 줄. 계정 일은 오른쪽 끝에 작게: 서랍을 연 이유가 아니다 */
+    var head = el('header', 'd-head');
+    var who = el('div', 'd-who');
+    who.appendChild(el('h3', 'big-title', s.name));
+    who.appendChild(el('p', 'dsub', (s.noRecord ? '아직 기록이 없어요' : '지금 ' + whereNow(s) + ' · 마지막 조작 ' + mmss(s.idleSec)) +
+      (s.onboard && s.onboard.stage && CC.onboard ? ' · 레벨 ' + CC.onboard.LABEL[s.onboard.stage] : '')));
+    head.appendChild(who);
+    if (CC.sb && CC.sb.active() && CC._removeStudent) {   /* 교실이 서버에만 있다 — 로컬 모드에는 뺄 교실이 없다 */
+      var acts = el('div', 'd-acts');
+      var inRoster = (CC.classroom.roster || []).filter(function (r) { return r.id === s.id; })[0];
+      if (inRoster && inRoster.login_id && CC._resetPassword) {   /* 선생님이 만든 계정만 — 이메일로 가입한 예전 학생은 아이디가 없다 */
+        var rp = el('button', 'pill roster-reset', '비밀번호 다시 만들기');
+        rp.type = 'button';
+        rp.addEventListener('click', function () { CC._resetPassword(inRoster); });
+        acts.appendChild(rp);
+      }
+      var rm = el('button', 'pill roster-remove', '교실에서 빼기');
+      rm.type = 'button';
+      rm.addEventListener('click', function () { CC._removeStudent(s); });
+      acts.appendChild(rm);
+      head.appendChild(acts);
+    }
+    d.appendChild(head);
+    delete fresh[s.id];
+
+    /* 교사가 할 말을 대신 써주지 않는다. 물어볼 질문만 고른다. 서랍을 열면 제일 먼저 보인다 */
+    d.appendChild(CC.kit.note('이 학생에게 먼저 물어볼 것', nextQuestion(s)));
+
+    if (serverOn()) {   /* 로컬 모드에는 나침반이 없다 */
+      d.appendChild(compassCard(s, mid, function (dbId, cm) { return missionName(cm, ms.indexOf(cm)); }));
+      if (cRoom) refreshCum(s, !cInit);   /* 열 때마다 새로 — 다른 기기에서 보낸 것도 보이게 */
+    }
+
+    var main = el('section', 'd-main');
+    main.setAttribute('aria-label', '기록');
+    main.appendChild(el('h4', null, '이 학생이 한 것 — 순서대로'));
+    main.appendChild(el('p', 'lead', '노란 표시는 말 걸기 좋은 순간, 붉은 표시는 살펴볼 것이에요.'));
+    /* 미션마다 접는 줄 하나 — 가장 최근 미션이 위. 미션이 하나뿐이거나 알림으로 연 미션이면 열린 채 */
+    var marks = [], seenFlag = {};   /* 줄에 붙은 표시 — 같은 글자는 한 번만 */
+    function addFold(title, id, isOpen) {
+      var box = missionRecords(s, id, all);
+      Array.prototype.forEach.call(box.querySelectorAll('.mark'), function (m) {
+        if (seenFlag[m.textContent]) return;
+        seenFlag[m.textContent] = 1;
+        marks.push({ txt: m.textContent, look: m.classList.contains('look') });
+      });
+      if (id === null && !box.querySelector('.row')) return;   /* 예전 기록이 없으면 줄도 없다 */
+      var f = CC.kit.fold(title, { open: isOpen });
+      f.body.appendChild(box);
+      main.appendChild(f.root);
+    }
+    ms.slice().reverse().forEach(function (id) {
+      addFold(missionName(id, ms.indexOf(id)), id, ms.length === 1 || id === mid);
+    });
+    addFold('다른 미션 기록', null, !ms.length);
+    /* 눈에 띄는 것 — 표시가 없는 학생은 이 줄이 없다 */
+    var flags = el('ul', 'd-flags');
+    flags.setAttribute('aria-label', '눈에 띄는 것');
+    marks.forEach(function (m) { flags.appendChild(el('li', 'k-chip mark' + (m.look ? ' look' : ''), m.txt)); });
+    if (flags.children.length) main.insertBefore(flags, main.children[2]);
     d.appendChild(main);
     levelRecords(d, all);
 

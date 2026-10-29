@@ -1702,10 +1702,11 @@ test('강사 서랍 — 끝낸 미션에만 수업에서 짚을 거리, 누르�
     { point: '답을 달라고 함', who: ['s1'], mid: 'ma', quote: 'split 이 뭐예요?', refused: true }]));
   await page.locator('.student-tile', { hasText: '태인' }).click();
   const d = page.locator('#detail');
-  await expect(d).not.toContainText('수업에서 짚을 거리');           // 모든 미션 보기에는 없다
-  await d.locator('.mf').nth(2).click();                              // mb — 끝내지 않음
-  await expect(d).not.toContainText('수업에서 짚을 거리');
-  await d.locator('.mf').nth(1).click();                              // ma — 끝냄
+  await expect(d).not.toContainText('수업에서 짚을 거리');           // 미션을 고르지 않고 연 서랍에는 없다
+  await expect(d.locator('.recap-go')).toHaveCount(0);
+  await d.locator('#detail-back').click();
+  await page.evaluate(e => { window.__evs.push(e); }, rv('s1', '태인', 's-redefine', 'ma', { to: '다른 조건' }));   // 알림이 ma 를 골라 연다
+  await page.locator('#alert-list li', { hasText: '태인' }).locator('.al-it').first().click({ timeout: 10000 });
   const row = d.locator('.d-tutor');
   await row.getByRole('button', { name: '튜터 대화에서 뽑기' }).click();
   const items = row.locator('.recap-item');
@@ -2770,9 +2771,25 @@ test('학생 상세 — 알림 항목으로 열면 그 미션 칩이 골라져 �
   const praise = page.locator('#alert-list li', { hasText: '칭찬 타이밍' });
   await expect(praise).toHaveCount(1, { timeout: 8000 });
   await praise.locator('.al-it').click();
-  const on = page.locator('#detail .mf[aria-pressed="true"]');
-  await expect(on).toHaveCount(1);
-  await expect(on).not.toContainText('모든 미션');
+  const d = page.locator('#detail');
+  await expect(d.locator('details.k-fold')).toHaveCount(2);
+  await expect(d.locator('details.k-fold[open]')).toHaveCount(1);   // 그 미션 줄만 열려 있다
+  await expect(d.locator('.mf')).toHaveCount(0);
+});
+
+test('학생 상세 — 미션마다 접는 줄 하나, 가장 최근 미션이 위, 알약은 없다', async ({ page }) => {
+  const calls = await asRecapTeacher(page, RECAP_EVS, { contentType: 'application/json', body: '{}' });
+  await page.locator('.student-tile', { hasText: '태인' }).click();
+  const d = page.locator('#detail');
+  await expect(d.locator('.mf')).toHaveCount(0);
+  const folds = d.locator('details.k-fold');
+  await expect(folds).toHaveCount(2);                                 // ma · mb (예전 기록 없음)
+  await expect(folds.first().locator('summary')).toHaveText('미션 2');   // mb 가 가장 최근
+  await expect(folds.nth(1).locator('summary')).toHaveText('미션 1');
+  await expect(d.locator('details.k-fold[open]')).toHaveCount(0);     // 둘 이상이면 모두 접힌 채
+  await folds.nth(1).locator('summary').click();
+  await expect(folds.nth(1).locator('.d-step-h')).toHaveText(['02 성공', '05 정리']);
+  expect(calls.length).toBe(0);
 });
 
 /* 미션 만들기 — 탭 둘과 4단계 (2026-10-20) */
