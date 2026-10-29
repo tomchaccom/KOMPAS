@@ -141,6 +141,7 @@ js/data/   바깥 세계. 여기만 localStorage 와 fetch 를 안다
 
 js/ui/     화면. DOM 만 만진다
   app.js  teacher.js  abstract.js  review.js  make.js  classroom.js  sentence.js  admin.js
+  kit.js        공용 화면 조각(el · esc · 칩 · 접는 줄 · 안내 상자 · 코드 블록) — 스타일은 kit.css
 ```
 
 ### 층을 넘지 않는다

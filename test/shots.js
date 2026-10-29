@@ -286,6 +286,7 @@ const SHOTS = {
   async 't7-level-record'(A) {
     const p = await teacher({ evs: classEvents(A), api: compassApi(CUM) });
     await p.locator('.student-tile', { hasText: '김가은' }).click();
+    await p.locator('#detail .d-level > summary').click();   // 레벨 기록은 접는 줄 안 — 펼쳐서 찍는다
     await p.locator('#detail .lv-rec').first().waitFor();
     await p.locator('#detail .d-level').scrollIntoViewIfNeeded();
     await shot(p, 't7-level-record', { el: '#detail .d-level' });

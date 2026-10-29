@@ -9,12 +9,7 @@
   'use strict';
 
   var $ = function (s) { return document.querySelector(s); };
-  var el = function (tag, cls, txt) {
-    var e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (txt != null) e.textContent = txt;
-    return e;
-  };
+  var el = CC.kit.el, esc = CC.kit.esc;
   /* Supabase 연결 시 실제 학생 데이터 사용. 미연결 시 목업 폴백. */
   var C = CC.classroom;
   var me = null;
@@ -87,12 +82,6 @@
       r.appendChild(el('span', 'meta', mmss(s.idleSec)));
       r.addEventListener('click', function () { openDetail(s); });
       box.appendChild(r);
-    });
-  }
-
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
 
@@ -204,17 +193,11 @@
     var dd = el('dd');
     fill(dd);
     r.appendChild(dd);
-    if (dd.querySelector('.mark')) r.classList.add('moment');   /* 고친 순간 — 줄 왼쪽에 노란 선 */
-    if (dd.querySelector('.mark.look')) r.classList.add('look');   /* 살펴볼 것 — 선 대신 테두리 색 */
+    if (dd.querySelector('.k-chip')) r.classList.add('moment');   /* 고친 순간 — 줄 왼쪽에 노란 선 */
+    if (dd.querySelector('.k-chip.look')) r.classList.add('look');   /* 살펴볼 것 — 선 대신 테두리 색 */
     dl.appendChild(r);
   }
-  /* 코드는 줄마다 한 칸 — 줄 번호는 CSS 가 센다. 긴 줄은 접어서 서랍이 옆으로 밀리지 않는다 */
-  function codeBlock(src) {
-    var pre = el('pre', 'code');
-    String(src || '').replace(/\n+$/, '').split('\n').forEach(function (line) { pre.appendChild(el('span', 'ln', line)); });
-    return pre;
-  }
-  function mark(dd, txt, look) { dd.appendChild(el('span', look ? 'mark look' : 'mark', txt)); }
+  function mark(dd, txt, look) { dd.appendChild(CC.kit.chip(txt, { look: look })); }
   function was(dd, txt) { if (txt) dd.appendChild(el('span', 'was', txt)); }
 
   /* ── 수업에서 짚을 거리 — 누를 때만 서버에 간다. 학생 질문 원문(quote)은 글자로만 붙인다.
@@ -282,7 +265,7 @@
   function waiting(s) {
     return !!cRows && finishedOf(s).some(function (m) { var r = cRows[ckey(s.id, m)]; return !(r && r.sent_at); });
   }
-  /* 미션 DB id → 이 학생 기록 안의 미션 id (서랍의 미션 알약·이름이 쓰는 id) */
+  /* 미션 DB id → 이 학생 기록 안의 미션 id (서랍의 미션 줄 제목·이름이 쓰는 id) */
   function clientMid(s, dbId) {
     var e = eventsOf(s).filter(function (x) { return x._missionDbId === dbId && x.mid; })[0];
     return e ? e.mid : null;
@@ -403,31 +386,35 @@
     return ul;
   }
 
-  /* 학생 한 명의 나침반 카드. mid — 서랍의 미션 알약으로 고른 미션(없으면 끝낸 미션 전부의 한마디 칸) */
-  function compassCard(st, mid, nameOf) {
+  /* 학생 한 명의 나침반 카드 — 바깥 틀은 하나(.compass-card, 알림이 여기로 내려온다). 안은 셋:
+   요약(눈에 띄는 것 · 그림 · 방향) → 할 일(후보 고르기 · 미션별 한마디) → 접힌 자세히(12칸 표 · 튜터 분포).
+   mid — 알림으로 고른 미션(없으면 끝낸 미션 전부의 한마디 칸) */
+  function compassCard(st, mid, nameOf, marks) {
     var card = el('section', 'compass-card');
-    card.setAttribute('aria-label', '나침반');
+    card.setAttribute('aria-label', '요약과 나침반');
     var n = ++cSeq;
     var D = CC.compass.DIRS, SH = CC.compass.SHAPE;
     var draw = function () {
       card.innerHTML = '';
-      card.appendChild(el('h4', null, '나침반'));
+      var aside = el('div', 'compass-top');   /* 요약 카드 오른쪽 — 그림 · 방향 · 읽는 중 안내 */
+      var todo = el('div', 'compass-todo');
+      card.appendChild(CC.kit.summary({ title: '눈에 띄는 것', chips: marks, aside: aside }));
+      card.appendChild(todo);
       var cum = cCum[st.id], cu = cum && cum.cumulative, rows = (cum && cum.rows) || [];
       var failed = cCumFail[st.id] || (cListFail && !cRows);
       if (!cu) {
         if (failed) {
-          card.appendChild(el('p', 'recap-fail', COMPASS_FAIL));
+          aside.appendChild(el('p', 'recap-fail', COMPASS_FAIL));
           var again = el('button', 'pill compass-reread', '다시 읽기');
           again.type = 'button';
           again.addEventListener('click', function () {
             if (cListFail && !cRows) { cListFail = false; draw(); CC._compassSync(cRoom); } else { delete cCumFail[st.id]; draw(); refreshCum(st, false); }
           });
-          card.appendChild(again);
-        } else card.appendChild(el('p', 'emptyrow', '읽고 있어요.'));
+          aside.appendChild(again);
+        } else aside.appendChild(el('p', 'emptyrow', '읽고 있어요.'));
       } else if (!cu.n) {
-        card.appendChild(el('p', 'emptyrow', '아직 읽은 미션이 없어요.'));
+        aside.appendChild(el('p', 'emptyrow', '아직 읽은 미션이 없어요.'));
       } else {
-        var top = el('div', 'compass-top');
         if (cu.cancel) {
           /* 지워졌다 — 바늘을 그리지 않는다. 겹친 후보만, 선생님이 고른다 */
           var pick = el('div', 'compass-pick');
@@ -445,18 +432,17 @@
           });
           pick.appendChild(bs);
           if (rows[0]) pick.appendChild(el('p', 'compass-msg', '고른 방향은 가장 최근 미션(' + nameOf(rows[0].missionId, clientMid(st, rows[0].missionId)) + ')의 한마디와 함께 보내져요. 학생 화면은 지난번 보낸 방향 그대로예요.'));
-          top.appendChild(pick);
+          todo.appendChild(pick);   /* 고르는 일은 할 일 칸에 */
         } else {
           var fig = el('div', 'compass-fig');
           fig.innerHTML = CC.compass.svg(cu.needle_deg, cu.length);   /* core 가 숫자만으로 만든 마크업 */
-          top.appendChild(fig);
+          aside.appendChild(fig);
           var say = el('div', 'compass-now');
           say.appendChild(el('strong', 'compass-dir', SH[cu.dir] + ' ' + D[cu.dir]));
           say.appendChild(el('p', 'compass-line', CC.compass.line(cu.dir) + (CC.compass.even(cu.length) ? ' · 고르게 가고 있어요' : '')));
-          top.appendChild(say);
+          aside.appendChild(say);
         }
-        card.appendChild(top);
-        card.appendChild(compassGist(rows, cu));   /* 바늘 바로 아래 — 표를 펴지 않아도 보이게 */
+        aside.appendChild(compassGist(rows, cu));   /* 바늘 바로 옆 — 표를 펴지 않아도 보이게 */
 
         /* 12칸 — 줄 = 항목, 열 = 최근 미션(왼쪽이 가장 최근). 예 ✓ / 아니오 –, 근거 인용은 글자 그대로 */
         var more = el('details', 'compass-more');
@@ -510,7 +496,7 @@
             ag.addEventListener('click', function () { analyze(st, dbId, false); });
             form.appendChild(ag);
           } else form.appendChild(el('p', 'emptyrow', '읽고 있어요.'));
-          card.appendChild(form);
+          todo.appendChild(form);
           return;
         }
         var tid = 'cp-note-' + n + '-' + i;
@@ -547,7 +533,7 @@
           sent.appendChild(el('p', 'compass-sent-note', row.teacher_note || ''));
           form.appendChild(sent);
         }
-        card.appendChild(form);
+        todo.appendChild(form);
       });
     };
     cDraw[st.id] = draw;
@@ -563,9 +549,8 @@
     var recs = all.filter(function (e) { return e.type === CC.events.T.S_ONBOARD && !e.skipped; })
       .sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
     if (!recs.length) return;
-    var sec = el('section', 'd-main d-level');
-    sec.setAttribute('aria-label', '레벨 테스트 기록');
-    sec.appendChild(el('h4', null, '레벨 테스트 기록'));
+    var fo = CC.kit.fold('레벨 테스트 기록');
+    fo.root.classList.add('d-main', 'd-level');
     var ul = el('ul', 'lv-list');
     recs.forEach(function (e) {
       var mk = OB.marks(e.answers, e.set), n = mk.filter(Boolean).length;
@@ -581,83 +566,14 @@
       li.appendChild(el('span', 'lv-stage', st ? '레벨 ' + OB.LABEL[st] : ''));
       ul.appendChild(li);
     });
-    sec.appendChild(ul);
-    d.appendChild(sec);
+    fo.body.appendChild(ul);
+    d.appendChild(fo.root);
   }
 
-  /* focusSection — 알림에서 열 때 이름 붙은 곳('compass' | 'tutor')으로 바로 내려가 거기에 초점을 둔다 */
-  function openDetail(s, mid, focusSection) {
-    var all = eventsOf(s);
-    var ms = mids(all);
-    var evs = mid ? all.filter(function (e) { return e.mid === mid; }) : all;
-    var v = mid ? (CC.fold.fold(evs, { id: s.id, name: s.name }) || CC.fold.empty(s.id, s.name)) : s;
-
-    var d = $('#detail');
-    var opening = d.hidden;
-    if (opening) detailFrom = { y: window.scrollY, id: s.id };   /* 미션 칩을 눌러 다시 그릴 때는 처음 자리를 지킨다 */
-    else if (detailFrom) detailFrom.id = s.id;                     /* 알림으로 다른 학생을 열면 돌아갈 타일은 그 학생 */
-    d.innerHTML = '';
-    var back = el('button', 'd-back', '← 학생');
-    back.type = 'button';
-    back.id = 'detail-back';
-    back.addEventListener('click', closeDetail);
-    d.appendChild(back);
-
-    /* 머리 — 이름과 지금 상태 한 줄. 계정 일은 오른쪽 끝에 작게: 서랍을 연 이유가 아니다 */
-    var head = el('header', 'd-head');
-    var who = el('div', 'd-who');
-    who.appendChild(el('h3', 'big-title', s.name));
-    who.appendChild(el('p', 'dsub', (s.noRecord ? '아직 기록이 없어요' : '지금 ' + whereNow(s) + ' · 마지막 조작 ' + mmss(s.idleSec)) +
-      (s.onboard && s.onboard.stage && CC.onboard ? ' · 레벨 ' + CC.onboard.LABEL[s.onboard.stage] : '')));
-    head.appendChild(who);
-    if (CC.sb && CC.sb.active() && CC._removeStudent) {   /* 교실이 서버에만 있다 — 로컬 모드에는 뺄 교실이 없다 */
-      var acts = el('div', 'd-acts');
-      var inRoster = (CC.classroom.roster || []).filter(function (r) { return r.id === s.id; })[0];
-      if (inRoster && inRoster.login_id && CC._resetPassword) {   /* 선생님이 만든 계정만 — 이메일로 가입한 예전 학생은 아이디가 없다 */
-        var rp = el('button', 'pill roster-reset', '비밀번호 다시 만들기');
-        rp.type = 'button';
-        rp.addEventListener('click', function () { CC._resetPassword(inRoster); });
-        acts.appendChild(rp);
-      }
-      var rm = el('button', 'pill roster-remove', '교실에서 빼기');
-      rm.type = 'button';
-      rm.addEventListener('click', function () { CC._removeStudent(s); });
-      acts.appendChild(rm);
-      head.appendChild(acts);
-    }
-    d.appendChild(head);
-    delete fresh[s.id];
-
-    /* 교사가 할 말을 대신 써주지 않는다. 물어볼 질문만 고른다. 서랍을 열면 제일 먼저 보인다 */
-    var say = el('div', 'saybox');
-    say.appendChild(el('span', 'k', '이 학생에게 먼저 물어볼 것'));
-    say.appendChild(el('span', null, nextQuestion(s)));
-    d.appendChild(say);
-
-    /* 미션 고르기 — 기록이 미션 하나뿐이면 고를 게 없다 */
-    if (ms.length > 1) {
-      var pills = el('div', 'mf-row');
-      pills.setAttribute('aria-label', '미션');
-      [null].concat(ms).forEach(function (id, i) {
-        var b = el('button', 'mf', id ? missionName(id, i - 1) : '모든 미션');
-        b.type = 'button';
-        b.setAttribute('aria-pressed', (id || null) === (mid || null) ? 'true' : 'false');
-        if (id) b.appendChild(el('span', 'st', CC.fold.missionStatus(all.filter(function (e) { return e.mid === id; })) === 'done' ? '완료' : '아직'));
-        b.addEventListener('click', function () { openDetail(s, id); });
-        pills.appendChild(b);
-      });
-      d.appendChild(pills);
-    }
-
-    if (serverOn()) {   /* 로컬 모드에는 나침반이 없다 */
-      d.appendChild(compassCard(s, mid, function (dbId, cm) { return missionName(cm, ms.indexOf(cm)); }));
-      if (cRoom) refreshCum(s, !cInit);   /* 열 때마다 새로 — 다른 기기에서 보낸 것도 보이게 */
-    }
-
-    var main = el('section', 'd-main');
-    main.setAttribute('aria-label', '기록');
-    main.appendChild(el('h4', null, '이 학생이 한 것 — 순서대로'));
-    main.appendChild(el('p', 'lead', '노란 표시는 말 걸기 좋은 순간, 붉은 표시는 살펴볼 것이에요.'));
+  /* 한 미션(mid)의 기록 — 단계(01~05)별 묶음. mid 가 null 이면 예전 블록 미션 기록(다른 미션 기록). 줄이 없으면 안내 한 줄 */
+  function missionRecords(s, mid, all) {
+    var evs = all.filter(function (e) { return mid ? e.mid === mid : !e.mid; });   /* mid 없는 기록은 예전 것 */
+    var v = CC.fold.fold(evs, { id: s.id, name: s.name }) || CC.fold.empty(s.id, s.name);
     var dl = el('div');   /* 줄을 모았다가 아래에서 단계별로 나눠 담는다 */
 
     /* 문장형 미션 */
@@ -688,7 +604,7 @@
           pair.appendChild(pc);
           var pk = el('div', 'd-pair-code');
           pk.appendChild(el('span', 'sub', '마지막으로 실행한 코드'));
-          pk.appendChild(codeBlock(v.sCodes[v.sCodes.length - 1].code));
+          pk.appendChild(CC.kit.code(v.sCodes[v.sCodes.length - 1].code));
           pair.appendChild(pk);
           dd.appendChild(pair);
         } else dd.appendChild(document.createTextNode(cardTexts.join(' → ')));
@@ -706,7 +622,7 @@
       row(dl, '코드 실행', lastCode.t, function (dd) {
         dd.appendChild(el('span', 'sub', (paired ? '' : '마지막으로 실행한 코드 · ') + '실행 ' + v.sCodes.length + '번' + (errs ? ' · 에러 ' + errs + '번' : '')));
         if (fixed) mark(dd, '에러 뒤 스스로 고침');
-        if (!paired) dd.appendChild(codeBlock(lastCode.code));
+        if (!paired) dd.appendChild(CC.kit.code(lastCode.code));
       }, 4);
       /* 자료마다 마지막 결과 — dataId 에는 자료 값이 들어 있다 (sentence.js lastResults 와 같은 규칙) */
       var byData = {}, order = [];
@@ -714,7 +630,7 @@
         if (!(c.dataId in byData)) order.push(c.dataId);
         byData[c.dataId] = { out: c.error || String(c.output || '').trim() || '출력 없음', err: !!c.error };
       });
-      var m = missionOf(mid || (ms.length === 1 ? ms[0] : null));   /* 자료 값 → 자료 이름 */
+      var m = missionOf(mid);   /* 자료 값 → 자료 이름 */
       row(dl, '자료별 결과', lastCode.t, function (dd) {
         /* 학생 04 화면의 결과 표와 같은 세 칸 — 자료 · 내용 · 결과 */
         var tb = el('table', 'd-tbl');
@@ -733,7 +649,7 @@
       }, 4);
     }
     /* 코드 사실 — 실행·구조로 확실한 것만, 한 줄에 하나. 판정이나 점수가 아니다 (미션 하나가 정해졌을 때만) */
-    var fm = v.sCodes.length && missionOf(mid || (ms.length === 1 ? ms[0] : null));
+    var fm = v.sCodes.length && missionOf(mid);
     if (fm && CC.facts) {
       var facts = CC.facts.of(v, fm);
       if (facts.length) {
@@ -819,30 +735,110 @@
       });
       if (s.wrap) row(dl, '오늘 이 학생이 말할 문장', null, function (dd) { dd.textContent = s.wrap; });
     }
-    /* 눈에 띄는 것 — 아래 줄에 붙은 표시를 한곳에 모은다. 표시가 없는 학생은 이 줄이 없다 */
-    var flags = el('ul', 'd-flags'), seenFlag = {};
-    flags.setAttribute('aria-label', '눈에 띄는 것');
-    Array.prototype.forEach.call(dl.querySelectorAll('.mark'), function (m) {
-      if (seenFlag[m.textContent]) return;
-      seenFlag[m.textContent] = 1;
-      flags.appendChild(el('li', m.className, m.textContent));
-    });
-    if (flags.children.length) main.appendChild(flags);
     /* 단계별로 묶는다 — 학생 화면의 01~05 단계 이름 그대로. 단계 안은 기록 순서 */
     var box = el('div', 'd-rows');
-    [[1, '01 문제'], [2, '02 성공'], [3, '03 설계'], [4, '04 코딩'], [5, '05 정리'], [0, '다른 미션 기록']].forEach(function (g) {
+    [[1, '01 문제'], [2, '02 성공'], [3, '03 설계'], [4, '04 코딩'], [5, '05 정리'], [0, '']].forEach(function (g) {
       var rs = Array.prototype.filter.call(dl.children, function (r) { return Number(r.dataset.step) === g[0]; })
         .sort(function (a, b) { return (Number(a.dataset.t) || 0) - (Number(b.dataset.t) || 0) || 0; });   /* 시각 없는 줄(예전 기록)은 0 — 안정 정렬로 제자리 */
       if (!rs.length) return;
       var sec = el('section', 'd-step');
-      sec.appendChild(el('h5', 'd-step-h', g[1]));
+      if (g[1]) sec.appendChild(el('h5', 'd-step-h', g[1]));   /* 예전 기록은 접는 줄 제목이 이미 이름이다 */
       var gl = el('dl');
       rs.forEach(function (r) { gl.appendChild(r); });
       sec.appendChild(gl);
       box.appendChild(sec);
     });
     if (!box.children.length) box.appendChild(el('p', 'emptyrow', '아직 기록이 없어요.'));
-    main.appendChild(box);
+    return box;
+  }
+
+  /* focusSection — 알림에서 열 때 이름 붙은 곳('compass' | 'tutor')으로 바로 내려가 거기에 초점을 둔다 */
+  function openDetail(s, mid, focusSection) {
+    var all = eventsOf(s);
+    var ms = mids(all);
+    var evs = mid ? all.filter(function (e) { return e.mid === mid; }) : all;
+    var v = mid ? (CC.fold.fold(evs, { id: s.id, name: s.name }) || CC.fold.empty(s.id, s.name)) : s;
+
+    var d = $('#detail');
+    var opening = d.hidden;
+    if (opening) detailFrom = { y: window.scrollY, id: s.id };   /* 알림으로 다른 학생·미션을 열어 다시 그릴 때는 처음 자리를 지킨다 */
+    else if (detailFrom) detailFrom.id = s.id;                     /* 알림으로 다른 학생을 열면 돌아갈 타일은 그 학생 */
+    d.innerHTML = '';
+    var back = el('button', 'd-back', '← 학생');
+    back.type = 'button';
+    back.id = 'detail-back';
+    back.addEventListener('click', closeDetail);
+    d.appendChild(back);
+
+    /* 머리 — 이름과 지금 상태 한 줄. 계정 일은 오른쪽 끝에 작게: 서랍을 연 이유가 아니다 */
+    var head = el('header', 'd-head');
+    var who = el('div', 'd-who');
+    who.appendChild(el('h3', 'big-title', s.name));
+    who.appendChild(el('p', 'dsub', (s.noRecord ? '아직 기록이 없어요' : '지금 ' + whereNow(s) + ' · 마지막 조작 ' + mmss(s.idleSec)) +
+      (s.onboard && s.onboard.stage && CC.onboard ? ' · 레벨 ' + CC.onboard.LABEL[s.onboard.stage] : '')));
+    head.appendChild(who);
+    if (CC.sb && CC.sb.active() && CC._removeStudent) {   /* 교실이 서버에만 있다 — 로컬 모드에는 뺄 교실이 없다 */
+      var acts = el('div', 'd-acts');
+      var inRoster = (CC.classroom.roster || []).filter(function (r) { return r.id === s.id; })[0];
+      if (inRoster && inRoster.login_id && CC._resetPassword) {   /* 선생님이 만든 계정만 — 이메일로 가입한 예전 학생은 아이디가 없다 */
+        var rp = el('button', 'pill roster-reset', '비밀번호 다시 만들기');
+        rp.type = 'button';
+        rp.addEventListener('click', function () { CC._resetPassword(inRoster); });
+        acts.appendChild(rp);
+      }
+      var rm = el('button', 'pill roster-remove', '교실에서 빼기');
+      rm.type = 'button';
+      rm.addEventListener('click', function () { CC._removeStudent(s); });
+      acts.appendChild(rm);
+      head.appendChild(acts);
+    }
+    d.appendChild(head);
+    delete fresh[s.id];
+
+    /* 기록 칸을 먼저 만들어 표시(marks)를 모은다 — 요약 카드가 그 표시를 쓴다. 화면 순서는 아래에서 정한다 */
+    var main = el('section', 'd-main');
+    main.setAttribute('aria-label', '기록');
+    main.appendChild(el('h4', null, '이 학생이 한 것 — 순서대로'));
+    main.appendChild(el('p', 'lead', '노란 표시는 말 걸기 좋은 순간, 붉은 표시는 살펴볼 것이에요.'));
+    /* 미션마다 접는 줄 하나 — 가장 최근 미션이 위. 미션이 하나뿐이거나 알림으로 연 미션이면 열린 채 */
+    var marks = [], seenFlag = {};   /* 줄에 붙은 표시 — 같은 글자는 한 번만 */
+    function addFold(title, id, isOpen) {
+      var box = missionRecords(s, id, all);
+      Array.prototype.forEach.call(box.querySelectorAll('.k-chip'), function (m) {
+        if (seenFlag[m.textContent]) return;
+        seenFlag[m.textContent] = 1;
+        marks.push({ txt: m.textContent, look: m.classList.contains('look') });
+      });
+      if (id === null && !box.querySelector('.row')) return;   /* 예전 기록이 없으면 줄도 없다 */
+      var f = CC.kit.fold(title, { open: isOpen });
+      f.body.appendChild(box);
+      /* 그 미션을 끝냈고 튜터와 말을 나눴을 때만 — 미션이 정해진 줄 안에 있으니 알림 없이 열어도 쓸 수 있다 */
+      var mevs = all.filter(function (e) { return e.mid === id; });
+      var mv = id && CC.fold.fold(mevs, { id: s.id, name: s.name });
+      if (mv && CC.sb && CC.sb.active() && CC.fold.missionStatus(mevs) === 'done' && mv.sTutor.length) {
+        var rb = el('button', 'pill recap-go', '튜터 대화에서 뽑기');
+        rb.type = 'button';
+        var rout = el('div', 'recap-out');
+        rout.setAttribute('aria-live', 'polite');
+        recapOn(rb, rout, function () { return CC.recap.forStudent(s, id, eventsOf, missionOf); }, false);
+        f.body.appendChild(rb);
+        f.body.appendChild(rout);
+      }
+      main.appendChild(f.root);
+    }
+    ms.slice().reverse().forEach(function (id) {
+      var done = CC.fold.missionStatus(all.filter(function (e) { return e.mid === id; })) === 'done';   /* 기록의 사실 — 판정이 아니다 */
+      addFold(missionName(id, ms.indexOf(id)) + ' · ' + (done ? '완료' : '아직'), id, ms.length === 1 || id === mid);
+    });
+    addFold('다른 미션 기록', null, !ms.length);
+    if (!main.querySelector('.k-fold')) main.appendChild(el('p', 'emptyrow', '아직 기록이 없어요.'));
+    /* 위에서 아래로: 요약(+나침반 할 일) → 먼저 물어볼 것 → 기록 → 레벨 → 튜터. 서랍을 열면 요약이 제일 먼저 보인다 */
+    if (serverOn()) {   /* 로컬 모드에는 나침반이 없다 — 요약 카드만 */
+      d.appendChild(compassCard(s, mid, function (dbId, cm) { return missionName(cm, ms.indexOf(cm)); }, marks));
+      if (cRoom) refreshCum(s, !cInit);   /* 열 때마다 새로 — 다른 기기에서 보낸 것도 보이게 */
+    } else d.appendChild(CC.kit.summary({ title: '눈에 띄는 것', chips: marks }));
+    /* 교사가 할 말을 대신 써주지 않는다. 물어볼 질문만 고른다 */
+    d.appendChild(CC.kit.note('이 학생에게 먼저 물어볼 것', nextQuestion(s)));
     d.appendChild(main);
     levelRecords(d, all);
 
@@ -850,17 +846,6 @@
     side.setAttribute('aria-label', '튜터 대화 · 짚을 거리');
     side.setAttribute('aria-label', '튜터 대화 · 짚을 거리');
     side.appendChild(el('h4', null, '튜터 대화 · 짚을 거리'));
-    /* 미션 하나를 끝냈고 튜터와 말을 나눴을 때만 — 미션이 하나뿐이면 고르지 않아도 그 미션이다 */
-    var rmid = mid || (ms.length === 1 ? ms[0] : null);
-    if (rmid && CC.sb && CC.sb.active() && CC.fold.missionStatus(evs) === 'done' && v.sTutor.length) {
-      var rb = el('button', 'pill recap-go', '튜터 대화에서 뽑기');
-      rb.type = 'button';
-      var rout = el('div', 'recap-out');
-      rout.setAttribute('aria-live', 'polite');
-      recapOn(rb, rout, function () { return CC.recap.forStudent(s, rmid, eventsOf, missionOf); }, false);
-      side.appendChild(rb);
-      side.appendChild(rout);
-    }
     side.appendChild(el('h5', null, '튜터에게 물은 것' + (v.sTutor.length ? ' (' + v.sTutor.length + '번)' : '')));
     side.appendChild(el('p', 'lead', '질문과 답을 그대로 보여 드려요.'));
     var qs = el('div', 'd-qs');

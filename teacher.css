@@ -136,16 +136,6 @@ body.notes .note { display: flex; gap: 6px; }
 .detail { background: none; padding: 16px 0 0; }
 .d-back { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px 0 0; margin: 0 0 8px; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
 .d-back:hover { text-decoration: underline; }
-.saybox {
-  margin-top: 16px;
-  background: var(--green-soft);
-  border: 1px solid var(--green);
-  border-radius: 12px;
-  padding: 14px 15px;
-  font-size: 14px;
-  line-height: 1.6;
-}
-.saybox .k { font-size: 12.5px; font-weight: 700; color: var(--green); display: block; margin-bottom: 5px; }
 
 /* ── 실시간 연결 안내 ────────────────────────────── */
 .livebar {
@@ -197,19 +187,15 @@ details.more > summary { cursor: pointer; font-size: 15px; font-weight: 600; min
 details.more[open] > summary { margin-bottom: 16px; }
 
 /* ── 학생 한 명 ──────────────────────────────────────
- * 교사가 움직이는 순서로 위에서 아래: 지금 상태 → 먼저 물어볼 것 → 미션 → 나침반(본문 폭 전체)
- * → 시간순 기록 · 튜터 대화와 짚을 거리(본문이 넓으면 나란히). */
+ * 교사가 움직이는 순서로 위에서 아래: 지금 상태 → 요약 카드[+나침반 할 일 · 자세히] → 먼저 물어볼 것
+ * → 미션별 접는 줄 기록 → 레벨 테스트 기록 → 튜터 대화와 짚을 거리. */
 .d-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; }
 .d-who { min-width: 0; }
 .detail .big-title { font-size: clamp(32px, 4vw, 48px); margin: 0; }
 .detail .dsub { font-size: 16px; color: var(--ink-2); margin-top: 6px; }
 .d-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .detail .d-acts .pill { min-height: 36px; padding: 0 14px; font-size: 13px; margin: 0; border-color: var(--line-strong); }
-.detail .saybox { margin-top: 20px; max-width: 72ch; font-size: 16px; }
-.mf-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-.mf { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: none; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }
-.mf[aria-pressed="true"] { border: 2px solid var(--ink); font-weight: 600; }
-.mf .st { font-size: 12px; color: var(--ink-2); font-weight: 400; }
+.detail .k-note { margin-top: 20px; max-width: 72ch; font-size: 16px; }
 .d-main, .d-tutor { min-width: 0; margin-top: 32px; }
 .d-main h4, .d-tutor h4 { margin: 0; font-size: 19px; font-weight: 700; }
 .d-tutor h5 { margin: 20px 0 0; font-size: 16px; font-weight: 700; }
@@ -217,8 +203,6 @@ details.more[open] > summary { margin-bottom: 16px; }
 .d-main .lead, .d-tutor .lead { margin: 4px 0 12px; font-size: 15px; color: var(--ink-2); }
 .detail .emptyrow { font-size: 15px; color: var(--ink-2); }
 /* 읽는 글자는 16px, 곁 정보도 15px 아래로 내리지 않는다 — 회색은 --ink-2 까지만 (--ink-3 은 대비가 모자란다) */
-.d-flags { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 16px; padding: 0; }
-.d-flags .mark { margin-left: 0; font-size: 15px; padding: 4px 12px; }
 .d-rows, .d-qs { margin: 0; }
 .d-step { border-top: 2px solid var(--line-strong); }
 .d-step + .d-step { margin-top: 20px; }
@@ -234,9 +218,6 @@ details.more[open] > summary { margin-bottom: 16px; }
 .d-rows .tm { font-size: 15px; color: var(--ink-2); padding-top: 1px; font-variant-numeric: tabular-nums; }
 .detail .was { display: block; margin-top: 6px; font-size: 15px; line-height: 1.6; color: var(--ink-2); font-family: var(--sans); }
 .detail .sub { display: block; font-size: 15px; color: var(--ink-2); }
-.detail .code { font-family: var(--mono); font-size: 15px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); border-radius: 10px; padding: 12px 14px 12px 0; margin: 8px 0 0; counter-reset: ln; }
-.detail .code .ln { display: block; padding-left: 3.4em; text-indent: 0; position: relative; min-height: 1.7em; }
-.detail .code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 0; width: 2.4em; text-align: right; color: var(--ink-2); user-select: none; }
 .d-tbl { width: auto; max-width: 100%; border-collapse: collapse; font-size: 16px; table-layout: auto; }
 .d-tbl th { text-align: left; font-size: 15px; font-weight: 600; color: var(--ink-2); padding: 0 14px 6px 0; border-bottom: 1px solid var(--line); }
 .d-tbl td { padding: 8px 14px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
@@ -244,8 +225,6 @@ details.more[open] > summary { margin-bottom: 16px; }
 .d-tbl .mono { font-family: var(--mono); font-size: 15px; }
 .d-tbl .out { font-weight: 600; }
 .d-tbl .out.err { color: var(--coral); font-weight: 400; }
-.detail .mark { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 999px; background: var(--folder); color: var(--on-folder); font-size: 14px; font-weight: 700; line-height: 1.5; }
-.detail .mark.look { background: var(--coral-soft); color: var(--coral); box-shadow: inset 0 0 0 1.5px var(--coral); }
 .d-qs .q { padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
 .d-qs .q-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-2); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
 .d-qs .tag { font-size: 14px; font-weight: 600; padding: 1px 10px; border-radius: 999px; border: 1px solid var(--ink); color: var(--ink); }
@@ -259,6 +238,28 @@ details.more[open] > summary { margin-bottom: 16px; }
   .d-rows .row dd { grid-column: 1 / -1; }
   .d-rows .row.moment { margin-left: -12px; padding-left: 12px; }
 }
+
+/* ── 학생 상세 글자 크기 — #detail 안에서만 (명단 · 알림 · 타일은 그대로, styles.css 토큰도 그대로) ──
+ * 본문 18px, 곁 글자 16px 아래로 내리지 않는다. 긴 글은 줄바꿈으로, 표만 제 안에서 가로로 민다. */
+#detail { font-size: 18px; overflow-wrap: anywhere; }
+#detail .d-rows .row, #detail .d-qs .q, #detail .d-tbl, #detail .k-note, #detail .k-summary,
+#detail .compass-card, #detail .compass-table, #detail .compass-gist .gv, #detail .compass-sent-note,
+#detail .d-main .lead, #detail .d-tutor .lead, #detail .emptyrow, #detail .d-tutor h5,
+#detail .recap-item > summary, #detail .recap-item .quote { font-size: 18px; }
+#detail .d-rows dt, #detail .d-rows .tm, #detail .was, #detail .sub, #detail .d-tbl th, #detail .d-tbl .mono,
+#detail .d-qs .q-meta, #detail .d-qs .tag, #detail .d-qs .who, #detail .d-qs .q .why, #detail .d-step-h,
+#detail .compass-gist .gk, #detail .gist-items .q, #detail .compass-table .q, #detail .compass-tutor,
+#detail .compass-form label, #detail .compass-msg, #detail .k-note .k, #detail .k-code, #detail .k-chip,
+#detail .d-acts .pill, #detail .d-back, #detail .lv-rec, #detail .detail-small,
+#detail .recap-item .who, #detail .recap-item .n, #detail .recap-item .tag { font-size: 16px; }
+#detail .dsub { font-size: 17px; }
+#detail .d-main h4, #detail .d-tutor h4, #detail .k-summary h4 { font-size: 21px; }
+#detail .k-summary-chips .k-chip { font-size: 16px; }
+#detail .k-code { min-width: 0; }
+/* 격자 칸은 안의 글이 길면 늘어난다 — 칸 폭을 1fr 로 묶고, 입력칸은 칸 폭을 넘지 않게 */
+#detail .compass-card, #detail .compass-todo, #detail .compass-form { grid-template-columns: minmax(0, 1fr); }
+#detail .compass-card > *, #detail .compass-todo > * { min-width: 0; }
+#detail .compass-form textarea, #detail .compass-form select { width: 100%; max-width: 100%; box-sizing: border-box; min-width: 0; }
 
 /* ── 미션 만들기 초안 (NewMission.dc.html) ────────── */
 .draft { display: flex; flex-direction: column; gap: 22px; margin-top: 8px; }
@@ -375,8 +376,9 @@ details.more[open] > summary { margin-bottom: 16px; }
 }
 
 /* 나침반 카드 — 회색·검정만 (브랜드 색 미정). 서랍 안, 기록 위. 방향은 색이 아니라 모양(▲ ◧ ○ ◇) */
-.compass-card { border: 2px solid var(--line-strong); border-radius: 16px; padding: 20px 24px; margin: 12px 0; display: grid; gap: 16px; min-width: 0; font-size: 16px; line-height: 1.6; }
-.compass-card h4 { margin: 0; font-size: 19px; }
+.compass-card { margin: 12px 0; display: grid; gap: 16px; min-width: 0; font-size: 16px; line-height: 1.6; }
+.compass-todo { display: grid; gap: 16px; min-width: 0; }
+.compass-todo:empty { display: none; }
 .compass-card h5 { margin: 0; font-size: 16px; }
 .compass-top { display: flex; gap: 16px 28px; flex-wrap: wrap; align-items: flex-start; }
 .compass-card .compass-fig svg { width: 168px; height: 168px; display: block; }
