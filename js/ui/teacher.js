@@ -9,12 +9,7 @@
   'use strict';
 
   var $ = function (s) { return document.querySelector(s); };
-  var el = function (tag, cls, txt) {
-    var e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (txt != null) e.textContent = txt;
-    return e;
-  };
+  var el = CC.kit.el, esc = CC.kit.esc;
   /* Supabase 연결 시 실제 학생 데이터 사용. 미연결 시 목업 폴백. */
   var C = CC.classroom;
   var me = null;
@@ -87,12 +82,6 @@
       r.appendChild(el('span', 'meta', mmss(s.idleSec)));
       r.addEventListener('click', function () { openDetail(s); });
       box.appendChild(r);
-    });
-  }
-
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
 
@@ -208,13 +197,7 @@
     if (dd.querySelector('.mark.look')) r.classList.add('look');   /* 살펴볼 것 — 선 대신 테두리 색 */
     dl.appendChild(r);
   }
-  /* 코드는 줄마다 한 칸 — 줄 번호는 CSS 가 센다. 긴 줄은 접어서 서랍이 옆으로 밀리지 않는다 */
-  function codeBlock(src) {
-    var pre = el('pre', 'code');
-    String(src || '').replace(/\n+$/, '').split('\n').forEach(function (line) { pre.appendChild(el('span', 'ln', line)); });
-    return pre;
-  }
-  function mark(dd, txt, look) { dd.appendChild(el('span', look ? 'mark look' : 'mark', txt)); }
+  function mark(dd, txt, look) { dd.appendChild(CC.kit.chip(txt, { look: look })); }
   function was(dd, txt) { if (txt) dd.appendChild(el('span', 'was', txt)); }
 
   /* ── 수업에서 짚을 거리 — 누를 때만 서버에 간다. 학생 질문 원문(quote)은 글자로만 붙인다.
@@ -629,10 +612,7 @@
     delete fresh[s.id];
 
     /* 교사가 할 말을 대신 써주지 않는다. 물어볼 질문만 고른다. 서랍을 열면 제일 먼저 보인다 */
-    var say = el('div', 'saybox');
-    say.appendChild(el('span', 'k', '이 학생에게 먼저 물어볼 것'));
-    say.appendChild(el('span', null, nextQuestion(s)));
-    d.appendChild(say);
+    d.appendChild(CC.kit.note('이 학생에게 먼저 물어볼 것', nextQuestion(s)));
 
     /* 미션 고르기 — 기록이 미션 하나뿐이면 고를 게 없다 */
     if (ms.length > 1) {
@@ -688,7 +668,7 @@
           pair.appendChild(pc);
           var pk = el('div', 'd-pair-code');
           pk.appendChild(el('span', 'sub', '마지막으로 실행한 코드'));
-          pk.appendChild(codeBlock(v.sCodes[v.sCodes.length - 1].code));
+          pk.appendChild(CC.kit.code(v.sCodes[v.sCodes.length - 1].code));
           pair.appendChild(pk);
           dd.appendChild(pair);
         } else dd.appendChild(document.createTextNode(cardTexts.join(' → ')));
@@ -706,7 +686,7 @@
       row(dl, '코드 실행', lastCode.t, function (dd) {
         dd.appendChild(el('span', 'sub', (paired ? '' : '마지막으로 실행한 코드 · ') + '실행 ' + v.sCodes.length + '번' + (errs ? ' · 에러 ' + errs + '번' : '')));
         if (fixed) mark(dd, '에러 뒤 스스로 고침');
-        if (!paired) dd.appendChild(codeBlock(lastCode.code));
+        if (!paired) dd.appendChild(CC.kit.code(lastCode.code));
       }, 4);
       /* 자료마다 마지막 결과 — dataId 에는 자료 값이 들어 있다 (sentence.js lastResults 와 같은 규칙) */
       var byData = {}, order = [];
