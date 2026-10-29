@@ -3217,4 +3217,10 @@ compass:function(a){var CK=['N1','N2','N3','E1','E2','E3','S1','S2','S3','W1','W
   expect(o.small).toBeGreaterThanOrEqual(16);
   expect(o.name).toBeGreaterThanOrEqual(30);
   expect(o.tw).toBe(true);                         // 12칸 표는 제 상자 안에서만 가로로 민다
+  for (const theme of ['light', 'dark']) {         // 노란 요약 카드 안 글자는 두 테마 모두 --on-folder (#111)
+    await page.evaluate(t => { document.documentElement.dataset.theme = t; }, theme);
+    for (const q of ['.k-summary .compass-line', '.k-summary .compass-gist .gk']) {
+      expect(await page.locator(q).first().evaluate(e => getComputedStyle(e).color), theme + ' ' + q).toBe('rgb(17, 17, 17)');
+    }
+  }
 });
