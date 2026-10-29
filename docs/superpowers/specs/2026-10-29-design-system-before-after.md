@@ -4,7 +4,7 @@
 |---|---|---|---|
 | detail-js-lines | 554 | | |
 | detail-css-rules | 112 | | |
-| helper-defs | 11 | | |
+| helper-defs | 10 | | |
 | dup-class-defs | 6 | | |
 | files-to-restyle-chip | 2 | | |
 

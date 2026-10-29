@@ -10,6 +10,8 @@ var cssFiles = fs.readdirSync(root).filter(function (f) { return /\.css$/.test(f
 var lines = read('js/ui/teacher.js').split('\n');
 var NAMES = ['openDetail', 'compassCard', 'compassGist', 'levelRecords', 'codeBlock', 'row', 'mark', 'was'];
 var jsLines = 0;
+/* 주의: 몸통은 다음 함수 앞의 주석 줄까지 포함하므로 주석을 옮기면 숫자가 바뀐다.
+   이름이 바뀌었거나 인라인된 함수는 0 줄로 센다 — 의도한 것(줄어든 만큼이 이후 숫자). */
 NAMES.forEach(function (n) {
   var s = lines.findIndex(function (l) { return l.indexOf('  function ' + n + '(') === 0; });
   if (s < 0) return;
@@ -23,11 +25,12 @@ var cssRules = read('teacher.css').split('\n').filter(function (l) {
   return /^\s*\.(detail|d-|compass-|lv-|mf|saybox)/.test(l);
 }).length;
 
-/* 3. js/ui/*.js 의 `var el = function` + `function esc` 정의 줄 수 */
+/* 3. js/ui/*.js 모듈 최상위(공백 정확히 둘)의 `var el = function` + `function esc(s` 정의 줄 수.
+   더 깊이 들여쓴 같은 이름(예: Esc 키 핸들러 `function esc()`)은 헬퍼가 아니라서 센 적 없다. */
 var helpers = 0;
 fs.readdirSync(path.join(root, 'js/ui')).filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
   read('js/ui/' + f).split('\n').forEach(function (l) {
-    if (/\bvar el = function\b/.test(l) || /\bfunction esc\b/.test(l)) helpers++;
+    if (/^  var el = function/.test(l) || /^  function esc\(s/.test(l)) helpers++;
   });
 });
 
