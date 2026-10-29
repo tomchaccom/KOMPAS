@@ -3180,3 +3180,36 @@ test('선생님 알림 — 서버 모드: 새로고침 · 다른 기기에서도
   await expect(items).toContainText('한결이 성공 조건을 스스로 바꿨어요.');
   await ctx.close();
 });
+
+test('강사 학생 상세 — 360 폭에서 긴 코드 · 긴 글 · 12칸 표가 있어도 옆으로 넘치지 않고, 글자는 크다', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.route('**/supabase-js@*/**', r => r.abort());
+  const LONG = '가'.repeat(300), CODE = 'x=' + 'a+'.repeat(59);
+  await page.route('**/js/data/supabase.js', r => r.fulfill({ contentType: 'application/javascript', body: `(function(CC){var P=function(v){return Promise.resolve(v)};
+var LONG=${JSON.stringify(LONG)},CODE=${JSON.stringify(CODE)},now=Date.now();
+function ev(e){e.v=1;e.t=now;return {student_id:'s1',mission_id:'M1',created_at:new Date().toISOString(),profiles:{name:'태인'},event:e}}
+CC.sb={active:function(){return true},getUser:function(){return P({id:'t1'})},getProfile:function(){return P({role:'teacher',name:'김선생'})},onAuthChange:function(){},signOut:function(){return P()},
+myClassrooms:function(){return P([{id:'r1',name:'반',code:'AB12CD'}])},getMissions:function(){return P([])},getClassroomStudents:function(){return P([{id:'s1',name:'태인'}])},
+getClassroomEvents:function(){return P([ev({type:'s-code',mid:'mx',code:CODE,dataId:'[1]',output:LONG,error:''}),ev({type:'s-code-judge',mid:'mx',verdict:'지켰다',basis:LONG}),ev({type:'s-redefine',mid:'mx',why:LONG})])},
+compass:function(a){var CK=['N1','N2','N3','E1','E2','E3','S1','S2','S3','W1','W2','W3'],ck={};CK.forEach(function(k){ck[k]={ok:k==='N2',quote:k==='N2'?LONG:''}});var row={studentId:'s1',missionId:'M1',checks:ck,tutor_dirs:{N:1,E:0,S:0,W:0},teacher_dir:'N',teacher_note:LONG,sent_at:'2026-10-20T00:00:00Z'};if(a==='list')return P({rows:[row]});if(a==='cumulative')return P({cumulative:{needle_deg:10,dir:'N',length:0.7,cancel:false,candidates:[],n:1},rows:[row]});return Promise.reject(new Error('x'))}}
+})(window.CC=window.CC||{});` }));
+  await page.goto(BASE + '/teacher.html');
+  await page.locator('.student-tile', { hasText: '태인' }).click();
+  const d = page.locator('#detail');
+  await expect(d.locator('.compass-card')).toBeVisible();
+  await d.locator('details.compass-more > summary').click();
+  for (const f of await d.locator('details.k-fold:not([open]) > summary').all()) await f.click();
+  const o = await page.evaluate(() => {
+    const px = s => { const e = document.querySelector(s); return e ? parseFloat(getComputedStyle(e).fontSize) : 99; };
+    const wrap = document.querySelector('.compass-tablewrap');
+    return { page: document.documentElement.scrollWidth - innerWidth, det: document.querySelector('#detail').scrollWidth - document.querySelector('#detail').clientWidth,
+      body: Math.min(px('#detail'), px('.d-rows dd'), px('.compass-card'), px('.k-note'), px('.compass-gist .gv'), px('.d-tutor .lead')),
+      small: Math.min(px('.d-rows dt'), px('.d-rows .tm'), px('.compass-gist .gk'), px('.d-qs .who'), px('.d-tbl th'), px('.compass-msg'), px('.d-step-h')),
+      name: px('#detail .big-title'), tw: wrap ? wrap.scrollWidth > wrap.clientWidth : null };
+  });
+  expect(o.page).toBeLessThanOrEqual(0);
+  expect(o.det).toBeLessThanOrEqual(0);
+  expect(o.body).toBeGreaterThanOrEqual(17);
+  expect(o.small).toBeGreaterThanOrEqual(16);
+  expect(o.name).toBeGreaterThanOrEqual(30);
+});
