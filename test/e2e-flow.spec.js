@@ -1724,6 +1724,10 @@ test('강사 서랍 — 끝낸 미션에만 수업에서 짚을 거리, 누르�
   await items.first().locator('summary').click();
   await expect(items.first().locator('.quote')).toHaveText('“split 이 뭐예요?”');
   await expect(items.nth(1).locator('.tag')).toHaveText('튜터가 답하지 못함');
+  const rs = await d.evaluate(e => { const px = q => parseFloat(getComputedStyle(e.querySelector(q)).fontSize); return { sum: px('.recap-item > summary'), quote: px('.recap-item .quote'), tag: px('.recap-item .tag') }; });
+  expect(rs.sum).toBeGreaterThanOrEqual(17);      // 짚을 거리도 본문 — 18px
+  expect(rs.quote).toBeGreaterThanOrEqual(17);
+  expect(rs.tag).toBeGreaterThanOrEqual(16);      // 곁 글자도 16px 아래로 내리지 않는다
   expect(calls.length).toBe(1);
   await d.locator('#detail-back').click();
   await page.evaluate(e => { window.__evs.push(e); }, rv('s1', '태인', 's-redefine', 'mb', { to: '또 다른 조건' }));
@@ -3200,11 +3204,11 @@ compass:function(a){var CK=['N1','N2','N3','E1','E2','E3','S1','S2','S3','W1','W
   await d.locator('details.compass-more > summary').click();
   for (const f of await d.locator('details.k-fold:not([open]) > summary').all()) await f.click();
   const o = await page.evaluate(() => {
-    const px = s => { const e = document.querySelector(s); return e ? parseFloat(getComputedStyle(e).fontSize) : 99; };
+    const px = (s, opt) => { const e = document.querySelector(s); if (!e) { if (opt) return 99; throw new Error('없는 선택자: ' + s); } return parseFloat(getComputedStyle(e).fontSize); };   // 반드시 있는 칸은 없으면 실패, 자료에 따라 없을 수 있는 칸(.d-qs .who · .d-tbl th · .compass-msg · .d-tutor .lead · .compass-gist .gv)만 건너뛴다
     const wrap = document.querySelector('.compass-tablewrap');
     return { page: document.documentElement.scrollWidth - innerWidth, det: document.querySelector('#detail').scrollWidth - document.querySelector('#detail').clientWidth,
-      body: Math.min(px('#detail'), px('.d-rows dd'), px('.compass-card'), px('.k-note'), px('.compass-gist .gv'), px('.d-tutor .lead')),
-      small: Math.min(px('.d-rows dt'), px('.d-rows .tm'), px('.compass-gist .gk'), px('.d-qs .who'), px('.d-tbl th'), px('.compass-msg'), px('.d-step-h')),
+      body: Math.min(px('#detail'), px('.d-rows dd'), px('.compass-card'), px('.k-note'), px('.compass-gist .gv', true), px('.d-tutor .lead', true)),
+      small: Math.min(px('.d-rows dt'), px('.d-rows .tm'), px('.compass-gist .gk'), px('.d-qs .who', true), px('.d-tbl th', true), px('.compass-msg', true), px('.d-step-h')),
       name: px('#detail .big-title'), tw: wrap ? wrap.scrollWidth > wrap.clientWidth : null };
   });
   expect(o.page).toBeLessThanOrEqual(0);
@@ -3212,4 +3216,5 @@ compass:function(a){var CK=['N1','N2','N3','E1','E2','E3','S1','S2','S3','W1','W
   expect(o.body).toBeGreaterThanOrEqual(17);
   expect(o.small).toBeGreaterThanOrEqual(16);
   expect(o.name).toBeGreaterThanOrEqual(30);
+  expect(o.tw).toBe(true);                         // 12칸 표는 제 상자 안에서만 가로로 민다
 });

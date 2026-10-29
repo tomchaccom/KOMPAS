@@ -244,16 +244,18 @@ details.more[open] > summary { margin-bottom: 16px; }
 #detail { font-size: 18px; overflow-wrap: anywhere; }
 #detail .d-rows .row, #detail .d-qs .q, #detail .d-tbl, #detail .k-note, #detail .k-summary,
 #detail .compass-card, #detail .compass-table, #detail .compass-gist .gv, #detail .compass-sent-note,
-#detail .d-main .lead, #detail .d-tutor .lead, #detail .emptyrow, #detail .d-tutor h5 { font-size: 18px; }
+#detail .d-main .lead, #detail .d-tutor .lead, #detail .emptyrow, #detail .d-tutor h5,
+#detail .recap-item > summary, #detail .recap-item .quote { font-size: 18px; }
 #detail .d-rows dt, #detail .d-rows .tm, #detail .was, #detail .sub, #detail .d-tbl th, #detail .d-tbl .mono,
 #detail .d-qs .q-meta, #detail .d-qs .tag, #detail .d-qs .who, #detail .d-qs .q .why, #detail .d-step-h,
 #detail .compass-gist .gk, #detail .gist-items .q, #detail .compass-table .q, #detail .compass-tutor,
 #detail .compass-form label, #detail .compass-msg, #detail .k-note .k, #detail .k-code, #detail .k-chip,
-#detail .d-acts .pill, #detail .d-back, #detail .lv-rec, #detail .detail-small { font-size: 16px; }
+#detail .d-acts .pill, #detail .d-back, #detail .lv-rec, #detail .detail-small,
+#detail .recap-item .who, #detail .recap-item .n, #detail .recap-item .tag { font-size: 16px; }
 #detail .dsub { font-size: 17px; }
 #detail .d-main h4, #detail .d-tutor h4, #detail .k-summary h4 { font-size: 21px; }
 #detail .k-summary-chips .k-chip { font-size: 16px; }
-#detail .k-code { overflow-wrap: anywhere; min-width: 0; }
+#detail .k-code { min-width: 0; }
 /* 격자 칸은 안의 글이 길면 늘어난다 — 칸 폭을 1fr 로 묶고, 입력칸은 칸 폭을 넘지 않게 */
 #detail .compass-card, #detail .compass-todo, #detail .compass-form { grid-template-columns: minmax(0, 1fr); }
 #detail .compass-card > *, #detail .compass-todo > * { min-width: 0; }
