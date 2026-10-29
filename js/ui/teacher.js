@@ -812,6 +812,18 @@
       if (id === null && !box.querySelector('.row')) return;   /* 예전 기록이 없으면 줄도 없다 */
       var f = CC.kit.fold(title, { open: isOpen });
       f.body.appendChild(box);
+      /* 그 미션을 끝냈고 튜터와 말을 나눴을 때만 — 미션이 정해진 줄 안에 있으니 알림 없이 열어도 쓸 수 있다 */
+      var mevs = all.filter(function (e) { return e.mid === id; });
+      var mv = id && CC.fold.fold(mevs, { id: s.id, name: s.name });
+      if (mv && CC.sb && CC.sb.active() && CC.fold.missionStatus(mevs) === 'done' && mv.sTutor.length) {
+        var rb = el('button', 'pill recap-go', '튜터 대화에서 뽑기');
+        rb.type = 'button';
+        var rout = el('div', 'recap-out');
+        rout.setAttribute('aria-live', 'polite');
+        recapOn(rb, rout, function () { return CC.recap.forStudent(s, id, eventsOf, missionOf); }, false);
+        f.body.appendChild(rb);
+        f.body.appendChild(rout);
+      }
       main.appendChild(f.root);
     }
     ms.slice().reverse().forEach(function (id) {
@@ -834,17 +846,6 @@
     side.setAttribute('aria-label', '튜터 대화 · 짚을 거리');
     side.setAttribute('aria-label', '튜터 대화 · 짚을 거리');
     side.appendChild(el('h4', null, '튜터 대화 · 짚을 거리'));
-    /* 미션 하나를 끝냈고 튜터와 말을 나눴을 때만 — 미션이 하나뿐이면 고르지 않아도 그 미션이다 */
-    var rmid = mid || (ms.length === 1 ? ms[0] : null);
-    if (rmid && CC.sb && CC.sb.active() && CC.fold.missionStatus(evs) === 'done' && v.sTutor.length) {
-      var rb = el('button', 'pill recap-go', '튜터 대화에서 뽑기');
-      rb.type = 'button';
-      var rout = el('div', 'recap-out');
-      rout.setAttribute('aria-live', 'polite');
-      recapOn(rb, rout, function () { return CC.recap.forStudent(s, rmid, eventsOf, missionOf); }, false);
-      side.appendChild(rb);
-      side.appendChild(rout);
-    }
     side.appendChild(el('h5', null, '튜터에게 물은 것' + (v.sTutor.length ? ' (' + v.sTutor.length + '번)' : '')));
     side.appendChild(el('p', 'lead', '질문과 답을 그대로 보여 드려요.'));
     var qs = el('div', 'd-qs');

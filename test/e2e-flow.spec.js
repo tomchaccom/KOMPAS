@@ -1710,12 +1710,12 @@ test('강사 서랍 — 끝낸 미션에만 수업에서 짚을 거리, 누르�
     { point: '답을 달라고 함', who: ['s1'], mid: 'ma', quote: 'split 이 뭐예요?', refused: true }]));
   await page.locator('.student-tile', { hasText: '태인' }).click();
   const d = page.locator('#detail');
-  await expect(d).not.toContainText('수업에서 짚을 거리');           // 미션을 고르지 않고 연 서랍에는 없다
-  await expect(d.locator('.recap-go')).toHaveCount(0);
-  await d.locator('#detail-back').click();
-  await page.evaluate(e => { window.__evs.push(e); }, rv('s1', '태인', 's-redefine', 'ma', { to: '다른 조건' }));   // 알림이 ma 를 골라 연다
-  await page.locator('#alert-list li', { hasText: '태인' }).locator('.al-it').first().click({ timeout: 10000 });
-  const row = d.locator('.d-tutor');
+  // 미션이 둘인 학생 — 알림 없이 열어도 끝낸 미션(ma)의 줄 안에 버튼이 있고, 끝내지 않은 미션(mb)에는 없다
+  await expect(d.locator('details.k-fold', { hasText: '미션 1' }).locator('.recap-go')).toHaveCount(1);
+  await expect(d.locator('details.k-fold', { hasText: '미션 2' }).locator('.recap-go')).toHaveCount(0);
+  await expect(d.locator('.d-tutor .recap-go')).toHaveCount(0);
+  const row = d.locator('details.k-fold', { hasText: '미션 1' });
+  await row.locator('summary').first().click();
   await row.getByRole('button', { name: '튜터 대화에서 뽑기' }).click();
   const items = row.locator('.recap-item');
   await expect(items).toHaveCount(2);
@@ -1731,10 +1731,10 @@ test('강사 서랍 — 끝낸 미션에만 수업에서 짚을 거리, 누르�
   expect(calls.length).toBe(1);
   await d.locator('#detail-back').click();
   await page.evaluate(e => { window.__evs.push(e); }, rv('s1', '태인', 's-redefine', 'mb', { to: '또 다른 조건' }));
-  await expect(page.locator('#alert-list li', { hasText: '태인' })).toHaveCount(2, { timeout: 10000 });   // ma 알림은 확인 전까지 남는다
+  await expect(page.locator('#alert-list li', { hasText: '태인' })).toHaveCount(1, { timeout: 10000 });
   await page.locator('#alert-list li', { hasText: '태인' }).locator('.al-it').first().click();   // 알림 — 끝내지 않은 mb (새것이 위)
   await expect(d.locator('details.k-fold[open] > summary')).toContainText('미션 2');
-  await expect(d.locator('.d-tutor .recap-go')).toHaveCount(0);       // 끝내지 않은 미션에는 짚을 거리가 없다
+  await expect(d.locator('details.k-fold', { hasText: '미션 2' }).locator('.recap-go')).toHaveCount(0);       // 끝내지 않은 미션에는 짚을 거리가 없다
   expect(calls[0].students.map(x => x.mid)).toEqual(['ma']);
   expect(JSON.stringify(calls[0])).not.toContain('태인');              // 이름은 서버로 가지 않는다
 });
@@ -1780,7 +1780,7 @@ test('강사 반 전체 — 서버가 실패하면 다시 누르라는 한 줄',
 test('강사 서랍 — 끝낸 미션이 하나뿐이면 고르지 않아도 수업에서 짚을 거리', async ({ page }) => {
   await asRecapTeacher(page, RECAP_EVS.slice(0, 3), ok([]));
   await page.locator('.student-tile', { hasText: '태인' }).click();
-  await expect(page.locator('#detail .d-tutor .recap-go')).toBeVisible();
+  await expect(page.locator('#detail .recap-go')).toBeVisible();
 });
 
 test('강사 반 전체 — 빈 결과는 캐시하지 않아 다시 누르면 서버를 다시 부른다', async ({ page }) => {
