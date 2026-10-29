@@ -768,6 +768,10 @@ test('강사 — 교실 폴더, 기록 없는 학생도 폴더, 교실에서 빼
   await expect(tiles).toHaveCount(3);
   await expect(tiles.filter({ hasText: '가은' })).toContainText('아직 기록이 없어요');
   await expect(tiles.filter({ hasText: '가은' }).locator('.folder')).toHaveClass(/gray/);
+  await tiles.filter({ hasText: '가은' }).click();   // 기록이 없어도 서랍은 열리고 빈 줄 안내가 보인다
+  await expect(page.locator('#detail .d-main .emptyrow')).toHaveText('아직 기록이 없어요.');
+  await expect(page.locator('#detail details.k-fold')).toHaveCount(0);
+  await page.locator('#detail-back').click();
 
   page.once('dialog', d => d.accept());
   await tiles.filter({ hasText: '한결' }).click();
@@ -1717,6 +1721,12 @@ test('강사 서랍 — 끝낸 미션에만 수업에서 짚을 거리, 누르�
   await expect(items.first().locator('.quote')).toHaveText('“split 이 뭐예요?”');
   await expect(items.nth(1).locator('.tag')).toHaveText('튜터가 답하지 못함');
   expect(calls.length).toBe(1);
+  await d.locator('#detail-back').click();
+  await page.evaluate(e => { window.__evs.push(e); }, rv('s1', '태인', 's-redefine', 'mb', { to: '또 다른 조건' }));
+  await expect(page.locator('#alert-list li', { hasText: '태인' })).toHaveCount(2, { timeout: 10000 });   // ma 알림은 확인 전까지 남는다
+  await page.locator('#alert-list li', { hasText: '태인' }).locator('.al-it').first().click();   // 알림 — 끝내지 않은 mb (새것이 위)
+  await expect(d.locator('details.k-fold[open] > summary')).toHaveText('미션 2');
+  await expect(d.locator('.d-tutor .recap-go')).toHaveCount(0);       // 끝내지 않은 미션에는 짚을 거리가 없다
   expect(calls[0].students.map(x => x.mid)).toEqual(['ma']);
   expect(JSON.stringify(calls[0])).not.toContain('태인');              // 이름은 서버로 가지 않는다
 });
@@ -2363,6 +2373,8 @@ test('강사 — 바늘이 지워지면 칭찬 타이밍 알림 한 번, 열 때
   await cancelLi.locator('.al-it').click();
   const landed = await page.evaluate(() => document.activeElement === document.querySelector('#detail .compass-card'));
   expect(landed).toBe(true);
+  await expect(page.locator('#detail details.k-fold[open]')).toHaveCount(1);   // 알림이 가리킨 미션 줄만 열려 있다
+  await expect(page.locator('#detail .compass-form')).toHaveCount(1);          // 한마디 칸도 그 미션 것만
 });
 
 test('강사 — 열 때 끝난 미션은 알림 없이 하나씩 차례로 읽고, 실패하면 한마디 칸에 다시 읽기', async ({ page }) => {
@@ -2774,6 +2786,7 @@ test('학생 상세 — 알림 항목으로 열면 그 미션 칩이 골라져 �
   const d = page.locator('#detail');
   await expect(d.locator('details.k-fold')).toHaveCount(2);
   await expect(d.locator('details.k-fold[open]')).toHaveCount(1);   // 그 미션 줄만 열려 있다
+  await expect(d.locator('details.k-fold[open] > summary')).toHaveText('미션 2');   // 알림이 가리킨 mx 는 기록에 두 번째로 나온 미션
   await expect(d.locator('.mf')).toHaveCount(0);
 });
 

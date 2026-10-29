@@ -187,8 +187,8 @@ details.more > summary { cursor: pointer; font-size: 15px; font-weight: 600; min
 details.more[open] > summary { margin-bottom: 16px; }
 
 /* ── 학생 한 명 ──────────────────────────────────────
- * 교사가 움직이는 순서로 위에서 아래: 지금 상태 → 먼저 물어볼 것 → 미션 → 나침반(본문 폭 전체)
- * → 시간순 기록 · 튜터 대화와 짚을 거리(본문이 넓으면 나란히). */
+ * 교사가 움직이는 순서로 위에서 아래: 지금 상태 → 먼저 물어볼 것 → 나침반(본문 폭 전체)
+ * → 미션별 접는 줄 기록 · 튜터 대화와 짚을 거리(본문이 넓으면 나란히). */
 .d-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; }
 .d-who { min-width: 0; }
 .detail .big-title { font-size: clamp(32px, 4vw, 48px); margin: 0; }

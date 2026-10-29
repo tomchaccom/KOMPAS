@@ -823,6 +823,7 @@
       addFold(missionName(id, ms.indexOf(id)), id, ms.length === 1 || id === mid);
     });
     addFold('다른 미션 기록', null, !ms.length);
+    if (!main.querySelector('.k-fold')) main.appendChild(el('p', 'emptyrow', '아직 기록이 없어요.'));
     /* 눈에 띄는 것 — 표시가 없는 학생은 이 줄이 없다 */
     var flags = el('ul', 'd-flags');
     flags.setAttribute('aria-label', '눈에 띄는 것');
