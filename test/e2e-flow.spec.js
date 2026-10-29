@@ -771,6 +771,8 @@ test('강사 — 교실 폴더, 기록 없는 학생도 폴더, 교실에서 빼
   await tiles.filter({ hasText: '가은' }).click();   // 기록이 없어도 서랍은 열리고 빈 줄 안내가 보인다
   await expect(page.locator('#detail .d-main .emptyrow')).toHaveText('아직 기록이 없어요.');
   await expect(page.locator('#detail details.k-fold')).toHaveCount(0);
+  await expect(page.locator('#detail .k-summary')).toContainText('표시할 것이 아직 없어요.');
+  await expect(page.locator('#detail .k-summary .k-chip')).toHaveCount(0);
   await page.locator('#detail-back').click();
 
   page.once('dialog', d => d.accept());
@@ -799,7 +801,7 @@ test('강사 — 1440 폭에서 학생 서랍은 넓고 옆으로 넘치지 않�
   const o = await d.evaluate(el => ({ sw: el.scrollWidth, cw: el.clientWidth, page: document.documentElement.scrollWidth - innerWidth }));
   expect(o.sw).toBeLessThanOrEqual(o.cw);
   expect(o.page).toBeLessThanOrEqual(0);
-  const ask = await d.locator('.saybox').boundingBox();
+  const ask = await d.locator('.k-note').boundingBox();
   const rows = await d.locator('.d-rows').boundingBox();
   expect(ask.y).toBeLessThan(rows.y);
   await expect(d.locator('.d-step-h')).toHaveText(['02 성공']);   // 기록은 학생 화면 단계 이름으로 묶인다
@@ -1725,7 +1727,7 @@ test('강사 서랍 — 끝낸 미션에만 수업에서 짚을 거리, 누르�
   await page.evaluate(e => { window.__evs.push(e); }, rv('s1', '태인', 's-redefine', 'mb', { to: '또 다른 조건' }));
   await expect(page.locator('#alert-list li', { hasText: '태인' })).toHaveCount(2, { timeout: 10000 });   // ma 알림은 확인 전까지 남는다
   await page.locator('#alert-list li', { hasText: '태인' }).locator('.al-it').first().click();   // 알림 — 끝내지 않은 mb (새것이 위)
-  await expect(d.locator('details.k-fold[open] > summary')).toHaveText('미션 2');
+  await expect(d.locator('details.k-fold[open] > summary')).toContainText('미션 2');
   await expect(d.locator('.d-tutor .recap-go')).toHaveCount(0);       // 끝내지 않은 미션에는 짚을 거리가 없다
   expect(calls[0].students.map(x => x.mid)).toEqual(['ma']);
   expect(JSON.stringify(calls[0])).not.toContain('태인');              // 이름은 서버로 가지 않는다
@@ -2206,7 +2208,9 @@ async function compassTeacher(page, evs, handler) {
 
 test('강사 — 나침반 카드: 누적 바늘 · 12칸 체크리스트 · 근거 인용 · 튜터 분포 · 보내기', async ({ page }) => {
   const sent = [];
-  const calls = await compassTeacher(page, [judgeEv('M1', 'mx')], b => {
+  const calls = await compassTeacher(page, [judgeEv('M1', 'mx'),
+    { ...judgeEv('M1', 'mx'), event: { type: 's-define', mid: 'mx', choice: 'a', v: 1, t: Date.now() } },
+    { ...judgeEv('M1', 'mx'), event: { type: 's-redefine', mid: 'mx', to: 'b', v: 1, t: Date.now() + 1 } }], b => {
     if (b.action === 'list') return { json: { rows: [cRow('M1')] } };
     if (b.action === 'cumulative') return { json: cumOf([cRow('M1')]) };
     if (b.action === 'send') { sent.push(b); return { json: cRow('M1', { teacher_note: b.note, sent_at: '2026-10-20T00:00:00Z' }) }; }
@@ -2217,6 +2221,14 @@ test('강사 — 나침반 카드: 누적 바늘 · 12칸 체크리스트 · 근
   await tile.click();
   const card = page.locator('#detail .compass-card');
   await expect(card).toHaveCount(1);
+  const sum = card.locator('.k-summary');   // 요약 카드는 머리 아래 · 기록 위, 그림과 방향이 그 안에
+  await expect(sum).toHaveCount(1);
+  await expect(sum.locator('.compass-dir')).toHaveText('▲ 북쪽 · 이해');
+  await expect(sum.locator('h4')).toHaveText('눈에 띄는 것');
+  await expect(sum.locator('.k-chip')).toHaveCount(1);
+  await expect(page.locator('#detail > .k-note')).toHaveCount(1);
+  const ys = await page.evaluate(() => ['.d-head', '.k-summary', '.compass-todo', '.compass-more', '.k-note', '.d-main'].map(q => document.querySelector('#detail ' + q).getBoundingClientRect().top));
+  expect([...ys].sort((a, b) => a - b)).toEqual(ys);
   await expect(card.locator('svg .compass-needle')).toHaveAttribute('transform', /rotate\(18\.4/);
   await expect(card.locator('svg .compass-poly')).toHaveCount(0);
   await expect(card.locator('.compass-dir')).toHaveText('▲ 북쪽 · 이해');
@@ -2273,6 +2285,10 @@ test('강사 — 짧은 바늘은 고르게, 지워지면 바늘 없이 후보�
   await expect(card.locator('svg .compass-needle')).toHaveCount(0);
   await expect(card.locator('.compass-line')).toHaveCount(0);
   await expect(card).toContainText('어느 쪽이 더 보였는지 골라 주세요');
+  await expect(card.locator('.k-summary svg .compass-needle')).toHaveCount(0);
+  await expect(card.locator('.compass-todo .compass-cand')).toHaveCount(2);   // 후보 고르기는 할 일 칸에
+  await card.locator('.compass-more > summary').click();
+  await expect(card.locator('.compass-more')).toHaveAttribute('open', '');
   await expect(card.locator('.compass-table th[scope="col"]')).toHaveCount(2);
   await card.locator('.compass-cand', { hasText: '북쪽' }).click();
   await expect(card.locator('.compass-cand', { hasText: '북쪽' })).toHaveAttribute('aria-pressed', 'true');
@@ -2285,6 +2301,7 @@ test('강사 — 짧은 바늘은 고르게, 지워지면 바늘 없이 후보�
   expect('dir' in sent[0]).toBe(false);
   await expect(forms.nth(0).locator('.compass-sent')).toBeVisible();   // 첫 보내기의 다시 그리기가 끝난 뒤에 둘째 칸을 쓴다
   await expect(card.locator('.compass-cand', { hasText: '북쪽' })).toHaveAttribute('aria-pressed', 'true');   // 고른 것이 남아 있다
+  await expect(card.locator('.compass-more')).toHaveAttribute('open', '');   // 펼친 상태도 다시 그려도 남는다
   await card.locator('.compass-form').nth(1).locator('textarea').fill('이번 미션 한마디');
   await card.locator('.compass-form').nth(1).locator('.compass-send').click();
   await expect.poll(() => sent.length).toBe(2);
@@ -2415,6 +2432,12 @@ test('강사 — 로컬 모드는 /api/compass 를 부르지 않고 나침반 �
   await page.waitForTimeout(500);
   expect(n).toBe(0);
   expect(await page.locator('.compass-card').count()).toBe(0);
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.locator('.student-tile').first().click();
+  await expect(page.locator('#detail')).toBeVisible();
+  await expect(page.locator('#detail .compass-card')).toHaveCount(0);   // 서버가 없으면 나침반은 없고 요약만
+  await expect(page.locator('#detail .k-summary')).toHaveCount(1);
+  expect(errs).toEqual([]);
 });
 
 test('강사 — list 가 실패하면 폴링마다 다시 부르지 않고 다시 읽기에서만 다시 부른다', async ({ page }) => {
@@ -2755,7 +2778,7 @@ test('학생 상세 — 본문 화면: 목록은 숨고, ← 학생 · Esc 로 �
   await expect(page.locator('#alerts')).toBeVisible();                       // 알림은 상세에서도 곁에
   await expect(d.locator('#detail-back')).toHaveText('← 학생');
   expect(await d.evaluate(el => getComputedStyle(el).position)).not.toBe('fixed');
-  const order = await d.evaluate(el => ['.d-head', '.saybox', '.d-main', '.d-tutor'].map(q => (el.querySelector(q) || {}).offsetTop));
+  const order = await d.evaluate(el => ['.d-head', '.k-summary', '.k-note', '.d-main', '.d-tutor'].map(q => (el.querySelector(q) || {}).offsetTop));
   expect(order.every(n => typeof n === 'number')).toBe(true);
   expect([...order].sort((a, b) => a - b)).toEqual(order);
   await expect(d.locator('.d-tutor')).toContainText('튜터 대화 · 짚을 거리');
@@ -2786,7 +2809,7 @@ test('학생 상세 — 알림 항목으로 열면 그 미션 칩이 골라져 �
   const d = page.locator('#detail');
   await expect(d.locator('details.k-fold')).toHaveCount(2);
   await expect(d.locator('details.k-fold[open]')).toHaveCount(1);   // 그 미션 줄만 열려 있다
-  await expect(d.locator('details.k-fold[open] > summary')).toHaveText('미션 2');   // 알림이 가리킨 mx 는 기록에 두 번째로 나온 미션
+  await expect(d.locator('details.k-fold[open] > summary')).toContainText('미션 2');   // 알림이 가리킨 mx 는 기록에 두 번째로 나온 미션
   await expect(d.locator('.mf')).toHaveCount(0);
 });
 
@@ -2797,8 +2820,9 @@ test('학생 상세 — 미션마다 접는 줄 하나, 가장 최근 미션이 
   await expect(d.locator('.mf')).toHaveCount(0);
   const folds = d.locator('details.k-fold');
   await expect(folds).toHaveCount(2);                                 // ma · mb (예전 기록 없음)
-  await expect(folds.first().locator('summary')).toHaveText('미션 2');   // mb 가 가장 최근
-  await expect(folds.nth(1).locator('summary')).toHaveText('미션 1');
+  await expect(folds.first().locator('summary')).toContainText('미션 2');   // mb 가 가장 최근
+  await expect(folds.nth(1).locator('summary')).toHaveText('미션 1 · 완료');   // 기록의 사실 — 끝냈다
+  await expect(folds.first().locator('summary')).toHaveText('미션 2 · 아직');
   await expect(d.locator('details.k-fold[open]')).toHaveCount(0);     // 둘 이상이면 모두 접힌 채
   await folds.nth(1).locator('summary').click();
   await expect(folds.nth(1).locator('.d-step-h')).toHaveText(['02 성공', '05 정리']);

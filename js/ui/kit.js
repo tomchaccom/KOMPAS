@@ -14,9 +14,9 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
-  /* teacher.js row() 가 .mark / .mark.look 으로 순간 줄을 가르므로 mark 를 함께 붙인다 */
+  /* teacher.js row() 는 .k-chip / .k-chip.look 으로 순간 줄을 가른다 */
   function chip(txt, opts) {
-    return el('span', 'k-chip mark' + (opts && opts.look ? ' look' : ''), txt);
+    return el('span', 'k-chip' + (opts && opts.look ? ' look' : ''), txt);
   }
   function fold(title, opts) {
     opts = opts || {};
@@ -27,6 +27,24 @@
     root.appendChild(body);
     if (opts.onToggle) root.addEventListener('toggle', function () { opts.onToggle(root.open); });
     return { root: root, body: body };
+  }
+  /* 요약 카드 — 제목 · 눈에 띄는 표시(칩) · 오른쪽 자리(나침반 그림 · 방향). 칩이 없으면 한 줄 */
+  function summary(opts) {
+    var root = el('section', 'k-summary');
+    var main = el('div', 'k-summary-main');
+    main.appendChild(el('h4', null, opts.title));
+    if (opts.chips && opts.chips.length) {
+      var row = el('div', 'k-summary-chips');
+      opts.chips.forEach(function (c) { row.appendChild(chip(c.txt, { look: c.look })); });
+      main.appendChild(row);
+    } else main.appendChild(el('p', 'k-summary-empty', '표시할 것이 아직 없어요.'));
+    root.appendChild(main);
+    if (opts.aside) {
+      var as = el('div', 'k-summary-aside');
+      as.appendChild(opts.aside);
+      root.appendChild(as);
+    }
+    return root;
   }
   /* saybox 는 e2e 가 고르는 이름 — 바꿀 때 테스트와 같이 */
   function note(label, text) {
@@ -42,5 +60,5 @@
     return pre;
   }
 
-  CC.kit = { el: el, esc: esc, chip: chip, fold: fold, note: note, code: code };
+  CC.kit = { el: el, esc: esc, chip: chip, fold: fold, note: note, code: code, summary: summary };
 })(window.CC = window.CC || {});

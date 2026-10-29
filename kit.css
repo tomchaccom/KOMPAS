@@ -13,3 +13,11 @@
 .k-code { font-family: var(--mono); font-size: 15px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); border-radius: 10px; padding: 12px 14px 12px 0; margin: 8px 0 0; counter-reset: ln; }
 .k-code .ln { display: block; padding-left: 3.4em; text-indent: 0; position: relative; min-height: 1.7em; }
 .k-code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 0; width: 2.4em; text-align: right; color: var(--ink-2); user-select: none; }
+
+.k-summary { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; background: color-mix(in srgb, var(--folder) 22%, var(--paper)); border: 2px solid var(--folder); border-radius: 16px; padding: 18px 22px; font-size: 16px; line-height: 1.6; min-width: 0; }
+.k-summary-main { flex: 1 1 260px; min-width: 0; }
+.k-summary h4 { margin: 0 0 10px; font-size: 19px; font-weight: 700; }
+.k-summary-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.k-summary-chips .k-chip { margin-left: 0; font-size: 15px; padding: 4px 12px; }
+.k-summary-empty { margin: 0; color: var(--ink-2); }
+.k-summary-aside { flex: 1 1 260px; min-width: 0; }

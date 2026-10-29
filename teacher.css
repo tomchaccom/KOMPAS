@@ -195,7 +195,7 @@ details.more[open] > summary { margin-bottom: 16px; }
 .detail .dsub { font-size: 16px; color: var(--ink-2); margin-top: 6px; }
 .d-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .detail .d-acts .pill { min-height: 36px; padding: 0 14px; font-size: 13px; margin: 0; border-color: var(--line-strong); }
-.detail .saybox { margin-top: 20px; max-width: 72ch; font-size: 16px; }
+.detail .k-note { margin-top: 20px; max-width: 72ch; font-size: 16px; }
 .d-main, .d-tutor { min-width: 0; margin-top: 32px; }
 .d-main h4, .d-tutor h4 { margin: 0; font-size: 19px; font-weight: 700; }
 .d-tutor h5 { margin: 20px 0 0; font-size: 16px; font-weight: 700; }
@@ -203,8 +203,6 @@ details.more[open] > summary { margin-bottom: 16px; }
 .d-main .lead, .d-tutor .lead { margin: 4px 0 12px; font-size: 15px; color: var(--ink-2); }
 .detail .emptyrow { font-size: 15px; color: var(--ink-2); }
 /* 읽는 글자는 16px, 곁 정보도 15px 아래로 내리지 않는다 — 회색은 --ink-2 까지만 (--ink-3 은 대비가 모자란다) */
-.d-flags { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 16px; padding: 0; }
-.d-flags .mark { margin-left: 0; font-size: 15px; padding: 4px 12px; }
 .d-rows, .d-qs { margin: 0; }
 .d-step { border-top: 2px solid var(--line-strong); }
 .d-step + .d-step { margin-top: 20px; }
@@ -356,8 +354,7 @@ details.more[open] > summary { margin-bottom: 16px; }
 }
 
 /* 나침반 카드 — 회색·검정만 (브랜드 색 미정). 서랍 안, 기록 위. 방향은 색이 아니라 모양(▲ ◧ ○ ◇) */
-.compass-card { border: 2px solid var(--line-strong); border-radius: 16px; padding: 20px 24px; margin: 12px 0; display: grid; gap: 16px; min-width: 0; font-size: 16px; line-height: 1.6; }
-.compass-card h4 { margin: 0; font-size: 19px; }
+.compass-card { margin: 12px 0; display: grid; gap: 16px; min-width: 0; font-size: 16px; line-height: 1.6; }
 .compass-card h5 { margin: 0; font-size: 16px; }
 .compass-top { display: flex; gap: 16px 28px; flex-wrap: wrap; align-items: flex-start; }
 .compass-card .compass-fig svg { width: 168px; height: 168px; display: block; }
@@ -582,3 +579,5 @@ body { font-size: 17px; }
 .gp-result { margin-top: 14px; font-size: 16px; }
 .list-h { font-size: 16px; font-weight: 700; margin: 20px 0 10px; }
 @media (max-width: 600px) { .seg { display: flex; } #dtab-missions .panel .seg-b { flex: 1; padding: 0 8px; } .gp-sum { flex-wrap: wrap; } }
+.compass-todo { display: grid; gap: 16px; min-width: 0; }
+.compass-todo:empty { display: none; }
