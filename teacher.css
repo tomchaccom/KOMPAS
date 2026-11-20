@@ -599,20 +599,50 @@ body { font-size: 17px; }
 #gp-quick { display: flex; flex-direction: column; gap: 12px; }
 #gp-quick[hidden] { display: none; }
 .gp-result { margin-top: 14px; font-size: 16px; }
-/* 생성 진행 — js/ui/genprogress.js. 서버가 SSE 로 보낸 단계 */
-.gen-prog { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); font-size: 15px; }
-.gen-prog-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.gen-prog-s { display: flex; align-items: center; gap: 10px; }
-.gen-prog-m { flex: 1 1 auto; }
-.gen-prog-t { font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.gen-prog-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 10px; border: 2px solid var(--ink); }
-.gen-prog-s.now .gen-prog-dot { background: var(--folder); animation: gen-prog-pulse 1.2s ease-in-out infinite; }
-.gen-prog-s.done { color: var(--ink-3); }
-.gen-prog-s.done .gen-prog-dot { border-color: transparent; position: relative; }
-.gen-prog-s.done .gen-prog-dot::after { content: '✓'; position: absolute; inset: -6px -4px; font-size: 13px; font-weight: 700; line-height: 18px; color: var(--ink-3); }
-.gen-prog-foot { margin: 8px 0 0; font-size: 13px; color: var(--ink-3); }
-.gen-prog-clock { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-@keyframes gen-prog-pulse { 50% { transform: scale(.7); opacity: .6; } }
-@media (prefers-reduced-motion: reduce) { .gen-prog-s.now .gen-prog-dot { animation: none; } }
+/* 생성 진행 — js/ui/genprogress.js. 서버가 SSE 로 보낸 단계.
+ * 대비(WCAG 2.1 AA): 글자 4.5:1, 테두리 · 막대 3:1 이상. 밝은/어두운 테마에서 잰 값 —
+ *   제목 · 지금 줄  --ink 위 --surface 18.9 / 15.5 · --on-folder 위 --folder 16.2
+ *   끝난 줄 · 시간  --ink-2 위 --surface 7.5 / 9.3      테두리 --ink-3 위 --surface 5.1 / 6.2
+ *   멈춤 제목      --coral 위 --surface 5.5 / 7.5      막대 --ink 위 --surface-3 16.4 / 12.6 (꾸밈 · aria-hidden)
+ * --ink-3 은 글자에 쓰지 않는다(--surface-2 위 4.7 로 아슬아슬). 상태는 글자('지금' · '끝남' · '아직')로 보인다. */
+.gen-prog { margin-top: 14px; padding: 16px 18px; border: 2px solid var(--ink-3); border-radius: 14px; background: var(--surface); color: var(--ink); font-size: 16px; scroll-margin-top: 140px; }
+.gen-prog.run { border-color: var(--ink); }
+.gen-prog-head { display: flex; align-items: center; gap: 12px; }
+.gen-prog-title { flex: 1 1 auto; font-size: 18px; font-weight: 700; line-height: 1.4; }
+.gen-prog-clock { font-family: var(--mono); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gen-prog-spin { width: 20px; height: 20px; flex: 0 0 20px; border-radius: 50%; border: 3px solid var(--surface-3); border-top-color: var(--ink); animation: gen-prog-rot .9s linear infinite; }
+.gen-prog:not(.run) .gen-prog-spin, .gen-prog:not(.run) .gen-prog-bar { display: none; }
+.gen-prog.stop .gen-prog-title { color: var(--coral); }
+.gen-prog-bar { position: relative; height: 6px; margin: 12px 0 4px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.gen-prog-bar span { position: absolute; top: 0; bottom: 0; width: 35%; border-radius: 3px; background: var(--ink); animation: gen-prog-slide 1.4s ease-in-out infinite; }
+.gen-prog-track { list-style: none; margin: 14px 0 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.gen-prog-g { flex: 1 1 0; min-width: 96px; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 2px solid var(--ink-3); border-radius: 10px; color: var(--ink-2); }
+.gen-prog-g.now { border-color: var(--on-folder); background: var(--folder); color: var(--on-folder); }
+.gen-prog-g.done { color: var(--ink); }
+.gen-prog-g.stopped, .gen-prog-s.stopped { border-color: var(--coral); color: var(--coral); font-weight: 700; }
+.gen-prog-s.stopped { border: 2px solid var(--coral); }
+/* 일하는 중인 생성 버튼 — 꺼진 버튼 기본색(검정 버튼에 opacity .4 → 회색 위 흰 글자 2.6:1)은 '멈췄다'로 읽혀서, 읽히는 색으로 둔다 (--ink 위 --surface-3 16.4 / 12.6) */
+.btn[aria-busy="true"]:disabled { background: var(--surface-3); color: var(--ink); border: 2px solid var(--ink-3); opacity: 1; cursor: progress; }
+.gen-prog-n { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+.gen-prog-gl { font-size: 15px; font-weight: 700; }
+.gen-prog-gs { font-size: 13px; }
+.gen-prog-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.gen-prog-s { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; color: var(--ink-2); line-height: 1.45; }
+.gen-prog-s.now { background: var(--folder); color: var(--on-folder); font-weight: 700; }
+.gen-prog-m { flex: 1 1 auto; min-width: 0; word-break: keep-all; overflow-wrap: anywhere; }
+.gen-prog-t { flex: 0 0 auto; white-space: nowrap; font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; }
+.gen-prog-tag { flex: 0 0 auto; min-width: 3em; text-align: center; padding: 1px 6px; border-radius: 6px; font-size: 13px; font-weight: 700; border: 1.5px solid currentColor; }
+.gen-prog-s.now .gen-prog-tag { background: var(--on-folder); color: var(--folder); border-color: var(--on-folder); }
+.gen-prog-more { margin-top: 10px; }
+.gen-prog-more summary { cursor: pointer; font-size: 15px; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; min-height: 32px; display: inline-flex; align-items: center; }
+.gen-prog-more summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+.gen-prog-more .gen-prog-list { margin-top: 6px; }
+@keyframes gen-prog-rot { to { transform: rotate(360deg); } }
+@keyframes gen-prog-slide { 0% { left: -35%; } 100% { left: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  .gen-prog-spin { animation: none; border-top-color: var(--ink); border-right-color: var(--ink); }
+  .gen-prog-bar span { animation: none; left: 0; width: 100%; opacity: .5; }
+}
+@media (max-width: 600px) { .gen-prog { padding: 14px; } .gen-prog-g { min-width: 0; padding: 6px 8px; } .gen-prog-gl { font-size: 14px; } }
 .list-h { font-size: 16px; font-weight: 700; margin: 20px 0 10px; }
 @media (max-width: 600px) { .seg { display: flex; } #dtab-missions .panel .seg-b { flex: 1; padding: 0 8px; } .gp-sum { flex-wrap: wrap; } }

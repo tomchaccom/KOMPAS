@@ -27,7 +27,7 @@
   var prog = null;
   function progress(first) {
     if (prog) prog.remove();
-    prog = CC.genProgress($('#sg-prog'), first);
+    prog = CC.genProgress($('#sg-prog'), first, { title: '문제를 만드는 중이에요', stages: CC.genProgress.BUILD });
     return prog;
   }
   function fail(e) { say(e && e.message ? e.message : '잠시 뒤에 다시 해 주세요.'); }

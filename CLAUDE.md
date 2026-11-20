@@ -141,6 +141,7 @@ js/data/   바깥 세계. 여기만 localStorage 와 fetch 를 안다
 
 js/ui/     화면. DOM 만 만진다
   app.js  teacher.js  abstract.js  review.js  make.js  classroom.js  sentence.js  admin.js
+  genprogress.js  생성 진행 표시(SSE 단계)   theme.js  밝은·어두운 화면 버튼
 ```
 
 ### 층을 넘지 않는다
@@ -213,7 +214,7 @@ uv run --with-requirements requirements.txt python test/test_compass_api.py     
 uv run --with-requirements requirements.txt python test/test_tutorguard.py      # 튜터 — 문법은 주고(이름·생김새·상관없는 예시 2줄) 미션 자료에 붙인 코드는 막기
 uv run --with-requirements requirements.txt python test/test_alert_checks.py    # 알림 확인 RLS — 본인 행·자기 교실만, 학생·anon 불가 (PostgreSQL 이 있으면 임시 DB 로 실제 검사)
 
-npx playwright test                # 화면 흐름 e2e (서버 8123) — 나침반 카드·상쇄 고르기·레벨 테스트 문제지·재테스트 알림
+npx playwright test                # 화면 흐름 e2e (서버 8123) — 나침반 카드·상쇄 고르기·레벨 테스트 문제지·재테스트 알림·생성 진행(SSE)·밝기 버튼
 ```
 
 8123 을 다른 작업 폴더가 쓰고 있으면 `CC_BASE=http://localhost:8125 node test/smoke.js` 처럼 주소를 바꾼다.
