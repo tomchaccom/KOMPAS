@@ -23,6 +23,7 @@ import urllib.request
 from pydantic import ValidationError
 
 from _pipeline import run
+from _progress import step
 from _schema import CHOICE, DESC, DRAFTS, SPEC, counter_problems, failed_fields
 
 DEFINE_Q = '어떤 결과가 나오면 성공일까요?'
@@ -486,6 +487,8 @@ def generate(lesson, key_point, call_llm=pickle_llm, feedback=None, t0=None, lev
     t0 = t0 or time.monotonic()  # make_mission 이 주면 요청 전체 시간을 같이 쓴다
     left = lambda: DEADLINE - (time.monotonic() - t0)  # noqa: E731
 
+    if not feedback:  # 다시 만들 때는 _review 가 이미 '다시 쓰는 중' 을 알렸다
+        step('choose', '수업에 맞는 문제 유형을 고르는 중이에요')
     pid, picked = choose(lesson, key_point, call_llm, min(15, left()))
     schema = _ask_schema(pid)
     ask = f'오늘 수업: {lesson}\n핵심: {key_point}\n유형: {DESC[pid]}\n\n이 수업과 이어지는 문제 하나를 만드세요.' + level_note(level)
@@ -494,6 +497,8 @@ def generate(lesson, key_point, call_llm=pickle_llm, feedback=None, t0=None, lev
     if feedback:  # 검수에서 걸린 이유 — 처음부터 다시 만들 때만 온다
         ask += '\n\n지난번 문제는 검수에서 이렇게 걸렸습니다. 이번엔 피하세요:\n' + '\n'.join('- ' + f for f in feedback)
     messages = [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': ask}]
+    if not feedback:
+        step('draft', '문제 초안을 쓰는 중이에요')
     raw = call_llm(messages, schema, left())
     m, bad = _parse(pid, raw)
     pid, m, bad = _retype(pid, m, bad)
@@ -501,6 +506,7 @@ def generate(lesson, key_point, call_llm=pickle_llm, feedback=None, t0=None, lev
     retried = 0
     while bad and retried < MAX_RETRY and left() > RETRY_NEEDS:
         retried += 1
+        step('fix', f'규칙에 어긋난 칸을 고치는 중이에요 ({retried}차)')
         # 어떤 규칙이 얼마나 자주 걸리는지가 프롬프트 개선의 유일한 근거다 (docs/llm.md 2절)
         print(f'[generate-mission] {retried}차 사유', json.dumps(bad, ensure_ascii=False), file=sys.stderr)
         messages += [

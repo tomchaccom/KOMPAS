@@ -9,6 +9,7 @@ import sys
 import time
 
 from _generate import DEADLINE, _json, generate, pickle_llm
+from _progress import step
 
 MAX_REGEN = 2
 REGEN_NEEDS = 25   # 초. 다시 만들고(~8초) 다시 검수(~3초)할 여유
@@ -96,6 +97,7 @@ def make_mission(lesson, key_point, call_llm=pickle_llm, level=None, t0=None):
             reasons = ['검수할 시간이 모자랐어요']
             break
         rounds += 1
+        step('review', f'학생에게 내기 전에 검수하는 중이에요 ({rounds}차)')
         try:
             # 게이트웨이가 8초쯤 504 를 내면 _post 가 한 번 다시 보내는데, 15초 예산이면 남은 7초에 또 끊겼다
             # (2026-10-18 eval 8회 중 3회 '검수를 못 했어요'). 다시 보낼 몫까지 20초.
@@ -111,5 +113,6 @@ def make_mission(lesson, key_point, call_llm=pickle_llm, level=None, t0=None):
         if rounds > MAX_REGEN or left() < REGEN_NEEDS:
             break
         feedback = reasons
+        step('regen', f'검수에서 걸린 점을 고쳐 다시 쓰는 중이에요 ({rounds}차 → {rounds + 1}차)')
     m['guard']['review'] = {'status': status, 'reasons': reasons, 'rounds': rounds}
     return m

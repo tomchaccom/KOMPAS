@@ -161,5 +161,12 @@ t('sameAsk 탈락은 이유로 남는다', any('몇 가지' in x for x in r), r)
 t('sameAsk 에 맞는 예·틀린 예가 함께 있다 (할 일은 비교하지 않는다)', '맞는 예' in ITEMS['sameAsk'] and '틀린 예' in ITEMS['sameAsk']
   and '할 일' in ITEMS['sameAsk'])
 
+print('[진행 단계 — 화면이 SSE 로 받는 순서]')
+from _progress import listen  # noqa: E402
+seen = []
+llm = fake(BAD, OK)
+quiet(lambda: listen(lambda c, m: seen.append(c), lambda: make_mission('리스트', '중복', llm)))
+t('유형 → 초안 → 검수 1차 → 다시 쓰기 → 검수 2차', seen == ['choose', 'draft', 'review', 'regen', 'review'], seen)
+
 print(f'\n{"FAIL " + str(fail) if fail else "ALL PASS"}')
 sys.exit(1 if fail else 0)
