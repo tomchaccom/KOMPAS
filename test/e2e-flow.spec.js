@@ -1227,6 +1227,84 @@ test('강사 모드 — 빠른 생성은 CC.sb.stream 으로 부른다', async (
   expect(await page.evaluate(() => window.__api)).toEqual(['/api/generate-mission']);
 });
 
+/* 생성 진행(SSE) — 상태는 색이 아니라 글자로, 끝나면 '다 만들었어요 · 걸린 시간' 한 줄 (2026-11-20 사람 피드백: 보기 힘들어 도는지 모르겠다) */
+test('강사 모드 — 빠른 생성 진행은 단계 흐름과 지금·끝남 글자로 보이고, 끝나면 한 줄이 남는다', async ({ page }) => {
+  await asTeacher(page);
+  const fixture = require('./fixtures/mission.json');
+  const ev = (e, d) => `event: ${e}\ndata: ${JSON.stringify(d)}\n\n`;
+  await page.route('**/api/generate-mission', r => r.fulfill({ contentType: 'text/event-stream', body:
+    ev('step', { code: 'start', msg: '요청을 받았어요', t: 0 }) +
+    ev('step', { code: 'choose', msg: '수업에 맞는 문제 유형을 고르는 중이에요', t: 0 }) +
+    ev('step', { code: 'draft', msg: '문제 초안을 쓰는 중이에요', t: 1 }) +
+    ev('step', { code: 'review', msg: '학생에게 내기 전에 검수하는 중이에요 (1차)', t: 3 }) +
+    ev('result', { status: 200, body: { ...fixture, guard: { fallback: [], reasons: {} }, left: 4 } }) }));
+  await page.locator('#classroom-cards .room-tile', { hasText: '태인한결' }).click();
+  await page.locator('.main-tab[data-dtab="dtab-missions"]').click();
+  await page.locator('#gt-quick').click();
+  await page.locator('#gen-lesson').fill('리스트와 반복문');
+  await page.locator('#gen-key').fill('같은 값이 여러 번 나올 때');
+  await page.locator('#gen-btn').click();
+  await expect(page.locator('#confirm-mission')).toBeVisible();
+  const prog = page.locator('#gen-result .gen-prog');
+  await expect(prog.locator('.gen-prog-title')).toHaveText(/^다 만들었어요 · 걸린 시간 \d+초$/);
+  await expect(prog.locator('.gen-prog-g .gen-prog-gl')).toHaveText(['유형 고르기', '초안 쓰기', '검수']);
+  await expect(prog.locator('.gen-prog-g .gen-prog-gs')).toHaveText(['끝남', '끝남', '끝남']);
+  await prog.locator('.gen-prog-more summary').click();
+  await expect(prog.locator('.gen-prog-s .gen-prog-tag')).toHaveText(['끝남', '끝남', '끝남', '끝남']);   // 요청 보내기 + 서버 단계 셋, 'start' 는 겹쳐 보이지 않는다
+  await expect(page.locator('#gen-btn')).not.toHaveAttribute('aria-busy', 'true');
+});
+
+test('강사 모드 — 빠른 생성이 서버 단계 뒤에 실패하면 멈춘 칸이 멈춤 글자로 남는다', async ({ page }) => {
+  await asTeacher(page);
+  const ev = (e, d) => `event: ${e}\ndata: ${JSON.stringify(d)}\n\n`;
+  await page.route('**/api/generate-mission', r => r.fulfill({ contentType: 'text/event-stream', body:
+    ev('step', { code: 'choose', msg: '수업에 맞는 문제 유형을 고르는 중이에요', t: 0 }) +
+    ev('step', { code: 'draft', msg: '문제 초안을 쓰는 중이에요', t: 1 }) +
+    ev('result', { status: 422, body: { error: '문제를 만들지 못했어요. 다시 만들어 주세요.', reasons: {} } }) }));
+  await page.locator('#classroom-cards .room-tile', { hasText: '태인한결' }).click();
+  await page.locator('.main-tab[data-dtab="dtab-missions"]').click();
+  await page.locator('#gt-quick').click();
+  await page.locator('#gen-lesson').fill('리스트와 반복문');
+  await page.locator('#gen-key').fill('같은 값이 여러 번 나올 때');
+  await page.locator('#gen-btn').click();
+  await expect(page.locator('#gen-result')).toContainText('문제를 만들지 못했어요.');
+  const prog = page.locator('#gen-result .gen-prog');
+  await expect(prog.locator('.gen-prog-title')).toHaveText(/^여기서 멈췄어요 · \d+초$/);
+  await expect(prog.locator('.gen-prog-g .gen-prog-gs')).toHaveText(['끝남', '멈춤', '아직']);
+  await expect(prog.locator('.gen-prog-s').last().locator('.gen-prog-tag')).toHaveText('멈춤');
+});
+
+/* 밝은 · 어두운 화면 버튼 — 상태는 글자로, 고름은 새로고침 뒤에도 남는다 (js/ui/theme.js) */
+test('강사 — 어두운 화면 버튼을 누르면 바뀌고, 새로고침해도 그대로다', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await asTeacher(page);
+  const t = page.locator('#theme-toggle');
+  await expect(t).toHaveAttribute('aria-pressed', 'false');
+  await expect(t).toContainText('어두운 화면 · 꺼짐');
+  await t.click();
+  await expect(t).toHaveAttribute('aria-pressed', 'true');
+  await expect(t).toContainText('어두운 화면 · 켜짐');
+  expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');
+  await page.reload();
+  expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');
+  await expect(page.locator('#theme-toggle')).toContainText('켜짐');
+  await page.locator('#theme-toggle').click();
+  expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('light');
+});
+
+/* 밝기 고름은 이 브라우저의 모든 화면에 이어진다 — 로그인 화면에서 고르면 첫 화면 · 학생 화면도 그대로 */
+test('어두운 화면 버튼 — 한 화면에서 고르면 다른 화면도 그 밝기로 열린다', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto(BASE + '/auth.html');
+  await page.locator('#theme-toggle').click();
+  for (const pg of ['landing', 'sentence', 'abstract', 'review', 'make', 'philosophy', 'admin']) {
+    await page.goto(BASE + '/' + pg + '.html');
+    expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), pg).toBe('dark');
+    await expect(page.locator('#theme-toggle'), pg).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#theme-toggle .theme-state'), pg).toHaveText('켜짐');
+  }
+});
+
 /* 단계별 생성 1·2단계 — 개념을 확인하고 예시를 고른다 (서버는 가짜 응답) */
 test('강사 단계별 생성 — 개념을 확인하고 예시를 고른다', async ({ page }) => {
   const reqs = [], auth = [];

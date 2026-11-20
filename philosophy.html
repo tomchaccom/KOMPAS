@@ -13,6 +13,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="philosophy.css">
+<!-- 고른 밝기를 그리기 전에 — js/ui/theme.js -->
+<script src="js/data/prefs.js"></script>
+<script src="js/ui/theme.js"></script>
+<script>CC.theme.apply();</script>
 </head>
 <body>
 <div class="wrap">
@@ -23,6 +27,7 @@
       <span class="mark icon"><img src="favicon.svg" alt=""></span>
       <div><b>KOMPAS</b><small>의도를 코드로 옮긴다</small></div>
     </div>
+    <div class="head-tools"><button type="button" class="tbtn theme-btn" id="theme-toggle" aria-pressed="false">어두운 화면 · <span class="theme-state">꺼짐</span></button></div>
   </div>
 
   <header class="phero">
@@ -353,5 +358,6 @@
 
 </div>
 </div>
+<script>CC.theme.bind(document.getElementById('theme-toggle'));</script>
 </body>
 </html>

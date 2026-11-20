@@ -38,9 +38,14 @@
 .logo-center { text-align: center; margin-bottom: 20px; }
 .logo-center .mark { width: 48px; height: 48px; border-radius: 14px; background: var(--green); color: var(--paper); display: inline-grid; place-items: center; font-family: var(--disp); font-weight: 800; font-size: 20px; }
 </style>
+<!-- 고른 밝기를 그리기 전에 — js/ui/theme.js -->
+<script src="js/data/prefs.js"></script>
+<script src="js/ui/theme.js"></script>
+<script>CC.theme.apply();</script>
 </head>
 <body>
 
+<div class="theme-corner"><button type="button" class="tbtn theme-btn" id="theme-toggle" aria-pressed="false">어두운 화면 · <span class="theme-state">꺼짐</span></button></div>
 <div class="auth-page">
   <div class="logo-center"><span class="mark icon"><img src="favicon.svg" alt=""></span></div>
 
@@ -235,5 +240,6 @@ window.CC_SUPABASE = {
 
 })();
 </script>
+<script>CC.theme.bind(document.getElementById('theme-toggle'));</script>
 </body>
 </html>

@@ -12,6 +12,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="sentence.css">
 <link rel="stylesheet" href="teacher.css">
+<!-- 고른 밝기를 그리기 전에 — js/ui/theme.js -->
+<script src="js/data/prefs.js"></script>
+<script src="js/ui/theme.js"></script>
+<script>CC.theme.apply();</script>
 </head>
 <body>
 
@@ -45,6 +49,7 @@
       <a class="navl" id="t-admin" href="admin.html" title="관리자" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg><span class="lbl">관리자</span></a>
       <button type="button" class="navl" id="tour-replay" data-tour="replay" title="사용법 보기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg><span class="lbl">사용법 보기</span></button>
       <button type="button" class="navl" id="notes-toggle" aria-pressed="false" title="설계 의도"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span class="lbl">설계 의도</span></button>
+      <button type="button" class="navl" id="theme-toggle" aria-pressed="false" title="어두운 화면"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"></svg><span class="lbl">어두운 화면 · <span class="theme-state">꺼짐</span></span></button>
       <button type="button" class="navl" id="t-logout" title="로그아웃" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg><span class="lbl">로그아웃<span id="t-username"></span></span></button>
     </div>
   </nav>
@@ -276,13 +281,14 @@ window.CC_SUPABASE = {
 <script src="js/data/api.js"></script>
 <script src="js/data/store.js"></script>
 <script src="js/data/seen.js"></script>
-<script src="js/data/prefs.js"></script>
+<!-- js/data/prefs.js 는 <head> 에서 먼저 읽는다(밝기 고름) -->
 <script src="js/data/checks.js"></script>
 <script src="js/core/blocks.js"></script>
 <script src="js/core/pyerr.js"></script>
 <script src="js/ui/pyrun.js"></script>
 <script src="js/ui/classroom.js"></script>
 <script src="js/ui/genprogress.js"></script>
+<script>CC.theme.bind(document.getElementById('theme-toggle'));</script>
 <script src="js/ui/genflow.js"></script>
 <script src="js/ui/tour.js"></script>
 <script src="js/ui/teacher.js"></script>
@@ -785,10 +791,10 @@ window.CC_SUPABASE = {
     if (!keyPoint) { result.innerHTML = '<span style="color:var(--coral)">핵심을 입력해주세요.</span>'; return; }
 
     var btn = $('#gen-btn');
-    btn.disabled = true; btn.textContent = '초안 생성 중...';
+    btn.disabled = true; btn.textContent = '만드는 중이에요…'; btn.setAttribute('aria-busy', 'true');
     result.innerHTML = '';
     /* 서버가 SSE 로 보내는 단계(유형 고르기 → 초안 → 검수 …)를 그대로 보인다 — js/ui/genprogress.js */
-    var prog = CC.genProgress(result, '서버에 요청을 보내는 중이에요');
+    var prog = CC.genProgress(result, '서버에 요청을 보내는 중이에요', { title: '미션을 만드는 중이에요', stages: CC.genProgress.QUICK });
 
     var req = { lesson: lesson, keyPoint: keyPoint, difficulty: $('#gen-diff').value, stages: CC.onboard.spread(CC.classroom.students) };
     /* 서버는 로그인한 강사만 받는다 — 토큰은 CC.sb.stream 이 붙인다.
@@ -797,7 +803,7 @@ window.CC_SUPABASE = {
       : CC.sse.post('/api/generate-mission', {}, req, prog.step))
     .then(function (m) {
       prog.done();
-      btn.disabled = !!CC.genflow.state.spent; btn.textContent = '빠른 생성';   /* 그사이 만들기가 한도를 다 썼으면 꺼진 채로 */
+      btn.disabled = !!CC.genflow.state.spent; btn.textContent = '빠른 생성'; btn.removeAttribute('aria-busy');   /* 그사이 만들기가 한도를 다 썼으면 꺼진 채로 */
       CC.genflow.quota(m.left); delete m.left;   /* 남은 수는 화면에만 — 미션에 섞여 저장되지 않게 */
 
       /* ── 초안 편집 폼 ── */
@@ -887,6 +893,7 @@ window.CC_SUPABASE = {
       draft += '</div></div>';
 
       result.innerHTML = draft;
+      result.insertBefore(prog.el, result.firstChild);   /* '다 만들었어요 · 걸린 시간' 한 줄 — 제대로 끝났는지 보이게 */
 
       /* 확정 — 편집된 값을 반영 */
       $('#confirm-mission').addEventListener('click', function () {
@@ -946,7 +953,7 @@ window.CC_SUPABASE = {
       var kept = prog.fail();
       result.innerHTML = '<span style="color:var(--coral)">' + esc(err.message || '생성 실패') + '</span>';
       if (kept) result.appendChild(prog.el);   /* 서버가 단계를 보냈으면 어디서 멈췄는지 남긴다 */
-      btn.disabled = !!CC.genflow.state.spent; btn.textContent = '빠른 생성';   /* 그사이 만들기가 한도를 다 썼으면 꺼진 채로 */
+      btn.disabled = !!CC.genflow.state.spent; btn.textContent = '빠른 생성'; btn.removeAttribute('aria-busy');   /* 그사이 만들기가 한도를 다 썼으면 꺼진 채로 */
       CC.genflow.spent(err);
     });
   });

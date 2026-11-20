@@ -11,6 +11,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="sentence.css">
+<!-- 고른 밝기를 그리기 전에 — js/ui/theme.js -->
+<script src="js/data/prefs.js"></script>
+<script src="js/ui/theme.js"></script>
+<script>CC.theme.apply();</script>
 </head>
 <body>
 
@@ -27,6 +31,7 @@
     <div class="toptools">
       <span class="tbtn" id="user-info" style="cursor:default" hidden></span>
       <button class="tbtn" id="tour-replay" type="button" data-tour="replay">사용법 보기</button>
+      <button type="button" class="tbtn theme-btn" id="theme-toggle" aria-pressed="false">어두운 화면 · <span class="theme-state">꺼짐</span></button>
       <button class="tbtn" id="logout-btn" aria-label="로그아웃">로그아웃</button>
     </div>
   </header>
@@ -320,7 +325,7 @@ window.CC_SUPABASE = {
 <script src="js/data/api.js"></script>
 <script src="js/data/store.js"></script>
 <script src="js/data/seen.js"></script>
-<script src="js/data/prefs.js"></script>
+<!-- js/data/prefs.js 는 <head> 에서 먼저 읽는다(밝기 고름) -->
 <script src="js/core/missions.js"></script>
 <script src="js/core/compass.js"></script>
 <script src="js/core/pipeline.js"></script>
@@ -334,5 +339,6 @@ window.CC_SUPABASE = {
 <script src="js/ui/onboard.js"></script>
 <script src="js/ui/tour.js"></script>
 <script src="js/ui/sentence.js"></script>
+<script>CC.theme.bind(document.getElementById('theme-toggle'));</script>
 </body>
 </html>
