@@ -1292,6 +1292,19 @@ test('강사 — 어두운 화면 버튼을 누르면 바뀌고, 새로고침해
   expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('light');
 });
 
+/* 밝기 고름은 이 브라우저의 모든 화면에 이어진다 — 로그인 화면에서 고르면 첫 화면 · 학생 화면도 그대로 */
+test('어두운 화면 버튼 — 한 화면에서 고르면 다른 화면도 그 밝기로 열린다', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto(BASE + '/auth.html');
+  await page.locator('#theme-toggle').click();
+  for (const pg of ['landing', 'sentence', 'abstract', 'review', 'make', 'philosophy', 'admin']) {
+    await page.goto(BASE + '/' + pg + '.html');
+    expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), pg).toBe('dark');
+    await expect(page.locator('#theme-toggle'), pg).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#theme-toggle .theme-state'), pg).toHaveText('켜짐');
+  }
+});
+
 /* 단계별 생성 1·2단계 — 개념을 확인하고 예시를 고른다 (서버는 가짜 응답) */
 test('강사 단계별 생성 — 개념을 확인하고 예시를 고른다', async ({ page }) => {
   const reqs = [], auth = [];

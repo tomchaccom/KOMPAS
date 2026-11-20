@@ -13,6 +13,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="abstract.css">
+<!-- 고른 밝기를 그리기 전에 — js/ui/theme.js -->
+<script src="js/data/prefs.js"></script>
+<script src="js/ui/theme.js"></script>
+<script>CC.theme.apply();</script>
 </head>
 <body>
 <div class="wrap">
@@ -23,6 +27,7 @@
       <div><b>KOMPAS</b><small>의도를 코드로 옮긴다</small></div>
     </div>
     <div class="head-tools">
+      <button type="button" class="tbtn theme-btn" id="theme-toggle" aria-pressed="false">어두운 화면 · <span class="theme-state">꺼짐</span></button>
       <button class="tbtn" id="notes-toggle" aria-pressed="false">설계 의도 보기</button>
       <a class="tbtn" href="index.html" style="text-decoration:none">미션 01–03</a>
       <a class="tbtn" href="review.html" style="text-decoration:none">미션 05</a>
@@ -120,5 +125,6 @@
 <script src="js/data/api.js"></script>
 <script src="js/data/store.js"></script>
 <script src="js/ui/abstract.js"></script>
+<script>CC.theme.bind(document.getElementById('theme-toggle'));</script>
 </body>
 </html>

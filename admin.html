@@ -12,6 +12,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="sentence.css">
 <link rel="stylesheet" href="teacher.css">
+<!-- 고른 밝기를 그리기 전에 — js/ui/theme.js -->
+<script src="js/data/prefs.js"></script>
+<script src="js/ui/theme.js"></script>
+<script>CC.theme.apply();</script>
 </head>
 <body>
 
@@ -28,6 +32,7 @@
     </div>
     <div class="side-bottom">
       <a class="navl" href="teacher.html" title="선생님 화면"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="lbl">선생님 화면</span></a>
+      <button type="button" class="navl" id="theme-toggle" aria-pressed="false" title="어두운 화면"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"></svg><span class="lbl">어두운 화면 · <span class="theme-state">꺼짐</span></span></button>
       <button type="button" class="navl" id="ad-logout" title="로그아웃" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg><span class="lbl">로그아웃</span></button>
     </div>
   </nav>
@@ -66,9 +71,10 @@ window.CC_SUPABASE = {
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
-<script src="js/data/prefs.js"></script>
+<!-- js/data/prefs.js 는 <head> 에서 먼저 읽는다(밝기 고름) -->
 <script src="js/data/supabase.js"></script>
 <script src="js/core/codemission.js"></script>
 <script src="js/ui/admin.js"></script>
+<script>CC.theme.bind(document.getElementById('theme-toggle'));</script>
 </body>
 </html>

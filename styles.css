@@ -68,6 +68,12 @@ button { font: inherit; cursor: pointer; }
 .tbtn { background: var(--surface); border: 2px solid var(--line-strong); color: var(--ink-2); border-radius: 999px; padding: 7px 15px; font-size: 12.5px; font-weight: 600; }
 .tbtn[aria-pressed="true"] { background: var(--violet); color: var(--paper); border-color: var(--violet); }
 
+/* 밝은 · 어두운 화면 버튼 — js/ui/theme.js. 켜짐 · 꺼짐은 글자로 보이므로 눌림 색(보라)을 쓰지 않는다.
+ * 글자 --ink 위 --surface 18.9 / 15.5, 테두리 --line-strong 위 --surface 18.9 / 15.5 (WCAG AA) */
+.tbtn.theme-btn, .tbtn.theme-btn[aria-pressed="true"] { background: var(--surface); color: var(--ink); border-color: var(--line-strong); gap: .3em; white-space: nowrap; }
+.tbtn.theme-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.theme-corner { display: flex; justify-content: flex-end; padding: 12px 16px 0; }
+
 .missionbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 .mbtn { background: var(--surface); border: 2px solid transparent; border-radius: 13px; padding: 9px 14px; text-align: left; box-shadow: var(--shadow); }
 .mbtn .n { font-family: var(--mono); font-size: 11px; color: var(--ink-3); display: block; }
