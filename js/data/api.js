@@ -128,4 +128,73 @@
       return r.json();
     });
   };
+
+  /* ── SSE 로 받는 생성 요청 (CC.sse) ─────────────────
+   * 생성은 길게는 50초가 걸린다. Accept: text/event-stream 을 붙이면 서버(api/_progress.py)가
+   *   event: step    { code, msg, t }   지금 하는 일 — 화면은 onStep 으로 받아 보인다
+   *   event: result  { status, body }   마지막에 한 번. 진짜 HTTP 상태는 여기
+   * 를 흘린다. 로그인 거절 · 형식 오류 · 예전 서버는 JSON 으로 오니 Content-Type 으로 갈라 읽는다.
+   * 결과는 CC.sb.api 와 같은 꼴 — 성공이면 본문, 실패면 status · body(· reasons) 를 단 Error.
+   * 토큰은 CC.sb.stream 이 붙여 이걸 부른다. 로컬 모드는 토큰 없이 바로 부른다. */
+  function fail(status, j) {
+    var err = new Error((j && j.error) || '서버에 연결하지 못했어요.');
+    err.status = status; err.body = j || {};
+    if (status === 422) err.reasons = j && j.reasons;
+    return err;
+  }
+  /* 빈 줄로 나뉜 덩어리 하나가 사건 하나. ':' 로 시작하는 줄(ping)은 버린다 → 남은 글(다음 덩어리 앞부분) */
+  function parseSSE(text, onEvent) {
+    var parts = text.replace(/\r\n/g, '\n').split('\n\n');
+    var rest = parts.pop();
+    parts.forEach(function (block) {
+      var ev = 'message', data = [];
+      block.split('\n').forEach(function (line) {
+        if (line.indexOf('event:') === 0) ev = line.slice(6).trim();
+        else if (line.indexOf('data:') === 0) data.push(line.slice(5).replace(/^ /, ''));
+      });
+      if (!data.length) return;
+      var d;
+      try { d = JSON.parse(data.join('\n')); } catch (e) { return; }
+      onEvent(ev, d);
+    });
+    return rest;
+  }
+  function readSSE(r, onStep) {
+    var result = null;
+    function on(ev, d) {
+      if (ev === 'step') { if (onStep) { try { onStep(d); } catch (e) { /* 화면 오류가 결과를 막지 않게 */ } } }
+      else if (ev === 'result') result = d;
+    }
+    function finish() {
+      if (!result) throw fail(502, { error: '응답이 끝까지 오지 않았어요. 다시 시도해 주세요.' });
+      if (result.status >= 200 && result.status < 300) return result.body;
+      throw fail(result.status, result.body);
+    }
+    /* 스트림을 못 읽는 브라우저면 다 받은 뒤 한 번에 — 단계는 늦게 보이지만 결과는 같다 */
+    if (!r.body || !r.body.getReader || typeof TextDecoder === 'undefined') {
+      return r.text().then(function (t) { parseSSE(t + '\n\n', on); return finish(); });
+    }
+    var reader = r.body.getReader(), dec = new TextDecoder(), buf = '';
+    function pump() {
+      return reader.read().then(function (x) {
+        if (x.done) { parseSSE(buf + dec.decode() + '\n\n', on); return finish(); }
+        buf = parseSSE(buf + dec.decode(x.value, { stream: true }), on);
+        return pump();
+      });
+    }
+    return pump();
+  }
+  /* headers 는 토큰까지 붙인 것. 서버가 SSE 를 모르면(JSON) CC.sb.api 처럼 읽는다 */
+  function postStream(path, headers, body, onStep, signal) {
+    var h = { 'Content-Type': 'application/json', Accept: 'text/event-stream' };
+    Object.keys(headers || {}).forEach(function (k) { h[k] = headers[k]; });
+    return fetch(path, { method: 'POST', headers: h, body: JSON.stringify(body), signal: signal }).then(function (r) {
+      if ((r.headers.get('Content-Type') || '').indexOf('text/event-stream') === 0) return readSSE(r, onStep);
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw fail(r.status, j);
+        return j;
+      });
+    });
+  }
+  CC.sse = { post: postStream, parse: parseSSE };
 })(window.CC = window.CC || {});

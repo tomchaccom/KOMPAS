@@ -1,5 +1,7 @@
 """POST /api/generate-mission  { lesson, keyPoint }  → 미션 JSON (+ guard) + left
 
+Accept: text/event-stream 이면 같은 결과를 SSE 로 — 진행 단계(step) 뒤에 result { status, body } (_progress.py).
+
 Vercel Python 핸들러. 일은 _generate.py 가 하고, 여기는 HTTP · 강사 확인 · 생성 한도만 다룬다.
 한 번 부름 = 1 (재요청은 서버 안에서 끝난다). 한도가 없으면 403 { error, left: 0 } — LLM 은 부르지 않는다.
 (파일 이름의 하이픈은 주소를 예전 Node 함수와 같게 두려는 것 — 그래서 import 는 못 한다)
@@ -12,6 +14,7 @@ from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _quota  # noqa: E402
+from _progress import sse_reply, wants_sse  # noqa: E402
 from _auth import TIMEOUT, bearer, ident, urllib_http  # noqa: E402
 from _generate import GenerateError, level_of  # noqa: E402
 from _review import make_mission  # noqa: E402
@@ -77,4 +80,9 @@ class handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(int(self.headers.get('Content-Length') or 0)) or b'{}')
         except (ValueError, TypeError, UnicodeDecodeError):
             return self._send(*BAD)
-        self._send(*serve(body, None, t0, tid, os.environ, urllib_http))
+        work = lambda: serve(body, None, t0, tid, os.environ, urllib_http)  # noqa: E731
+        if wants_sse(self.headers):
+            # Accept: text/event-stream 이면 진행 단계를 흘리고 마지막에 결과를 보낸다 (_progress.py).
+            # 로그인 거절 · 본문 형식 오류는 위에서 JSON 으로 끝난다 — 화면은 Content-Type 으로 갈라 읽는다
+            return sse_reply(self, work, t0)
+        self._send(*work())

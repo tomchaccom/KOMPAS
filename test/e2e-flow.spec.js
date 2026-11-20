@@ -742,6 +742,7 @@ roster.forEach(function(r){if(window.__due===r.id)r.onboard_due='2026-10-19T00:0
 window.__removed=[];window.__created=[];window.__reset=[];var T0=Date.now()-864e5;
 CC.sb={active:function(){return true},
 api:function(p,b){return fetch(p,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer fake'},body:JSON.stringify(b)}).then(function(r){return r.json().then(function(j){if(!r.ok){var e=new Error(j.error||'x');e.reasons=j.reasons;e.status=r.status;e.body=j;throw e}return j})})},
+stream:function(p,b,s){return CC.sse.post(p,{'Authorization':'Bearer fake'},b,s)},
 getUser:function(){return P({id:'t1'})},getProfile:function(){if(window.__noProfile)return P(null);return P({role:window.__role||'teacher',name:'김선생'})},
 createStudent:function(rid,s){if(s.loginId==='taken')return Promise.reject(new Error('이미 있는 아이디예요.'));window.__created.push([rid,s]);roster.push({id:'n'+roster.length,name:s.name,login_id:s.loginId});return P({loginId:s.loginId,password:s.password||'k7mpq2xa'})},
 resetStudentPassword:function(rid,lid){window.__reset.push([rid,lid]);return P({loginId:lid,password:'zz88aa44'})},
@@ -1209,13 +1210,13 @@ test('실행기 — 앞 실행이 도는 동안 부른 실행도 차례로 끝�
   expect(r.got).toEqual([['a', '1\n', ''], ['b', '2\n', ''], ['c', '', r.TIMEOUT], ['d', '3\n', '']]);
 });
 
-/* 서버가 로그인한 강사만 받는다 — 강사 모드의 빠른 생성은 CC.sb.api(토큰을 붙이는 data 층 함수)로 간다 */
-test('강사 모드 — 빠른 생성은 CC.sb.api 로 부른다', async ({ page }) => {
+/* 서버가 로그인한 강사만 받는다 — 강사 모드의 빠른 생성은 CC.sb.stream(토큰을 붙이고 진행 단계를 SSE 로 받는 data 층 함수)으로 간다 */
+test('강사 모드 — 빠른 생성은 CC.sb.stream 으로 부른다', async ({ page }) => {
   await asTeacher(page);
   const fixture = require('./fixtures/mission.json');
   await page.route('**/api/generate-mission', r => r.fulfill({ contentType: 'application/json',
     body: JSON.stringify({ ...fixture, guard: { fallback: [], reasons: {} } }) }));
-  await page.evaluate(() => { const f = CC.sb.api; window.__api = []; CC.sb.api = (p, b) => { window.__api.push(p); return f(p, b); }; });
+  await page.evaluate(() => { const f = CC.sb.stream; window.__api = []; CC.sb.stream = (p, b, s) => { window.__api.push(p); return f(p, b, s); }; });
   await page.locator('#classroom-cards .room-tile', { hasText: '태인한결' }).click();
   await page.locator('.main-tab[data-dtab="dtab-missions"]').click();
   await page.locator('#gt-quick').click();

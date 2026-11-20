@@ -186,6 +186,7 @@
           </section>
           <div id="gp-confirm" class="gp-confirm" role="alertdialog" aria-label="확인" hidden><p>만든 문제가 사라져요. 계속할까요?</p><button type="button" id="gp-yes" class="btn primary">계속</button><button type="button" id="gp-no" class="btn o">취소</button></div>
           <p id="sg-status" role="status"></p>
+          <div id="sg-prog"></div>
         </div>
 
         <div id="gp-quick" role="tabpanel" aria-labelledby="gt-quick" hidden>
@@ -281,6 +282,7 @@ window.CC_SUPABASE = {
 <script src="js/core/pyerr.js"></script>
 <script src="js/ui/pyrun.js"></script>
 <script src="js/ui/classroom.js"></script>
+<script src="js/ui/genprogress.js"></script>
 <script src="js/ui/genflow.js"></script>
 <script src="js/ui/tour.js"></script>
 <script src="js/ui/teacher.js"></script>
@@ -784,22 +786,17 @@ window.CC_SUPABASE = {
 
     var btn = $('#gen-btn');
     btn.disabled = true; btn.textContent = '초안 생성 중...';
-    result.innerHTML = '<span style="color:var(--ink-3)">미션을 만들고 있어요...</span>';
+    result.innerHTML = '';
+    /* 서버가 SSE 로 보내는 단계(유형 고르기 → 초안 → 검수 …)를 그대로 보인다 — js/ui/genprogress.js */
+    var prog = CC.genProgress(result, '서버에 요청을 보내는 중이에요');
 
     var req = { lesson: lesson, keyPoint: keyPoint, difficulty: $('#gen-diff').value, stages: CC.onboard.spread(CC.classroom.students) };
-    /* 서버는 로그인한 강사만 받는다 — 토큰은 CC.sb.api 가 붙인다.
+    /* 서버는 로그인한 강사만 받는다 — 토큰은 CC.sb.stream 이 붙인다.
      * 로컬 모드(Supabase 없음)는 토큰 없이 보낸다: 배포 서버는 401 로 거절하고, 로컬 개발 서버·시험은 그대로 돈다 */
-    (CC.sb && CC.sb.active() ? CC.sb.api('/api/generate-mission', req) : fetch('/api/generate-mission', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req)
-    }).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (d) {
-        if (!r.ok) throw new Error(d.error || '생성 실패');
-        return d;
-      });
-    }))
+    (CC.sb && CC.sb.active() ? CC.genProgress.call('/api/generate-mission', req, prog.step)
+      : CC.sse.post('/api/generate-mission', {}, req, prog.step))
     .then(function (m) {
+      prog.done();
       btn.disabled = !!CC.genflow.state.spent; btn.textContent = '빠른 생성';   /* 그사이 만들기가 한도를 다 썼으면 꺼진 채로 */
       CC.genflow.quota(m.left); delete m.left;   /* 남은 수는 화면에만 — 미션에 섞여 저장되지 않게 */
 
@@ -946,7 +943,9 @@ window.CC_SUPABASE = {
       });
     })
     .catch(function (err) {
-      result.innerHTML = '<span style="color:var(--coral)">' + esc(err.message) + '</span>';
+      var kept = prog.fail();
+      result.innerHTML = '<span style="color:var(--coral)">' + esc(err.message || '생성 실패') + '</span>';
+      if (kept) result.appendChild(prog.el);   /* 서버가 단계를 보냈으면 어디서 멈췄는지 남긴다 */
       btn.disabled = !!CC.genflow.state.spent; btn.textContent = '빠른 생성';   /* 그사이 만들기가 한도를 다 썼으면 꺼진 채로 */
       CC.genflow.spent(err);
     });
