@@ -23,6 +23,13 @@
     return CC.sb.api('/api/mission-steps', body);
   }
   function say(t) { $('#sg-status').textContent = t || ''; }
+  /* 만들기 진행 — 서버 단계(SSE)와 이 브라우저에서 돌려 보는 단계를 한 목록에. 다시 만들기도 같은 목록에 잇는다 */
+  var prog = null;
+  function progress(first) {
+    if (prog) prog.remove();
+    prog = CC.genProgress($('#sg-prog'), first);
+    return prog;
+  }
   function fail(e) { say(e && e.message ? e.message : '잠시 뒤에 다시 해 주세요.'); }
 
   /* 남은 생성 — 서버가 알려 준 수만 두 생성 버튼 옆에 보인다. 0 이면 두 버튼을 끈다(다시 켜는 건 새로고침 — 한도는 관리자만 늘린다).
@@ -62,6 +69,7 @@
   function drop(n) {
     reached = n; sgen++; st.d = null; st.fresh = false;
     $('#sg-draft').textContent = '';
+    if (prog) { prog.remove(); prog = null; }
   }
   /* 만드는 동안은 개념을 바꾸지 못한다 — 바꾸면 이미 차감된 초안이 어디에도 못 붙는다 */
   function busy(on) { $('#sg-concept-pick').disabled = on; $('#sg-concept').disabled = on; }
@@ -170,30 +178,35 @@
   /* prev: 직전에 만들어 돌려 본 초안 {d, res, p}. 재요청이 실패해도 이건 이미 한 번 차감되고 받은 것이라 버리지 않는다 */
   function make(probs, left, ticket, prev) {
     var my = ++bgen;
-    say(probs.length ? '다시 만드는 중이에요.' : '만드는 중이에요.');
+    say('');
+    var pg = prev && prog ? prog : progress('서버에 요청을 보내는 중이에요');
+    if (prev) pg.step({ code: 'again', msg: '돌려 보다 걸린 점을 붙여 다시 요청하는 중이에요 (' + (RETRIES - left) + '차)' });
     busy(true);
     boot();
     var body = { action: 'build', concept: st.concept, example: st.examples[st.pick],
       wish: $('#sg-wish').value.trim(), problems: probs, lesson: $('#gen-lesson').value.trim() };
     if (ticket) body.ticket = ticket;
-    return call(body).then(function (r) {
+    var l = level(); body.difficulty = l.difficulty; body.stages = l.stages;
+    return CC.genProgress.call('/api/mission-steps', body, function (s) { if (my === bgen) pg.step(s); }).then(function (r) {
       /* 차감은 이미 일어났다 — 늦은 응답이라도 수는 반영한다. 다만 더 최근에 받은 수보다 큰 값으로 되돌리지는 않는다 */
       if (r && typeof r.left === 'number' && (st.left == null || r.left <= st.left)) quota(r.left);
       if (my !== bgen) return;
       var d = r && r.draft;
       if (!d || !Array.isArray(d.inputs) || !d.inputs.length || typeof d.solution !== 'string') throw new Error('초안을 받지 못했어요. 다시 만들어 주세요.');
       d.inputs.forEach(function (x) { x.v = oneLine(x.v); });
-      say('돌려 보는 중이에요.');
+      pg.step({ code: 'run', msg: '모범 답안을 이 브라우저에서 자료마다 돌려 보는 중이에요' });
       return runAll(d).then(function (res) {
         if (my !== bgen) return;
         var p = problems(d, res);
         if (p.length && left > 0) return make(p, left - 1, r.ticket, { d: d, res: res, p: p });
+        pg.done();
         draft(d, res, p);
         say('');
       });
     }).catch(function (e) {
       spent(e);
       if (my !== bgen) return;
+      pg.fail();   /* 서버가 단계를 보냈으면 어디서 멈췄는지 남긴다 */
       if (!prev) { busy(false); return fail(e); }
       draft(prev.d, prev.res, prev.p);
       say('다시 만들지 못해서 처음 만든 문제를 보여 드려요. 걸린 곳을 고쳐 쓰거나 만들기를 다시 눌러 주세요.');

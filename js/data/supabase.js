@@ -60,12 +60,21 @@
     });
   }
 
+  function stream(path, body, onStep, signal) {
+    if (!sb) return Promise.reject(new Error('Supabase 미설정'));
+    return sb.auth.getSession().then(function (res) {
+      var token = res.data && res.data.session && res.data.session.access_token;
+      if (!token) throw new Error('다시 로그인해 주세요.');
+      return CC.sse.post(path, { Authorization: 'Bearer ' + token }, body, onStep, signal);
+    });
+  }
   function accounts(body) { return api('/api/create-student', body); }
 
   CC.sb = {
     active: function () { return !!sb; },
     client: function () { return sb; },
     api: api,
+    stream: stream,
 
     /* 수업에서 짚을 거리 — 성공 결과만 이 브라우저에 둔다. key 는 CC.recap 이 만든다 (새 튜터 대화가 쌓이면 바뀐다).
      * CC.sb.api 를 그때그때 찾는다 — 저장소가 막혀도 서버만 다시 부를 뿐이다 */
